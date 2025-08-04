@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -59,6 +60,7 @@ const Header = () => {
 
             {/* Auth Buttons */}
             <div className="hidden md:flex items-center space-x-4">
+              <ThemeToggle />
               <Button variant="ghost" className="btn-ghost">
                 Login
               </Button>
@@ -68,16 +70,19 @@ const Header = () => {
             </div>
 
             {/* Mobile Menu Button */}
-            <button
-              onClick={toggleMenu}
-              className="md:hidden p-2 rounded-lg hover:bg-accent transition-colors"
-            >
-              {isMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </button>
+            <div className="flex items-center space-x-2 md:hidden">
+              <ThemeToggle />
+              <button
+                onClick={toggleMenu}
+                className="p-2 rounded-lg hover:bg-accent transition-colors"
+              >
+                {isMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </header>
