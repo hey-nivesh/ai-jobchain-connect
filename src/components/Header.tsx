@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Menu, X, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -37,15 +38,14 @@ const Header = () => {
       >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center space-x-2">
-              <div className="p-2 rounded-xl bg-primary text-primary-foreground">
-                <Bot className="h-6 w-6" />
+            <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+              <div className="p-2 rounded-xl text-primary-foreground">
+                <img src="/Main_Logo.png" alt="JobMatch AI Logo" className="h-6 w-6 object-contain" />
               </div>
-              <span className="text-xl font-bold">JobMatch AI</span>
-            </div>
+              <span className="text-xl font-bold">ZenithWork AI</span>
+            </Link>
 
-            {/* Desktop Navigation */}
+
             <nav className="hidden md:flex items-center space-x-8">
               {navItems.map((item) => (
                 <a
@@ -61,12 +61,16 @@ const Header = () => {
             {/* Auth Buttons */}
             <div className="hidden md:flex items-center space-x-4">
               <ThemeToggle />
-              <Button variant="ghost" className="btn-ghost">
-                Login
-              </Button>
-              <Button className="btn-primary">
-                Sign Up
-              </Button>
+              <Link to="/login">
+                <Button variant="ghost" className="btn-ghost">
+                  Login
+                </Button>
+              </Link>
+              <Link to="/signup">
+                <Button className="btn-primary">
+                  Sign Up
+                </Button>
+              </Link>
             </div>
 
             {/* Mobile Menu Button */}
@@ -108,12 +112,16 @@ const Header = () => {
                   </a>
                 ))}
                 <div className="flex flex-col space-y-3 pt-6 border-t border-border">
-                  <Button variant="ghost" className="btn-ghost w-full">
-                    Login
-                  </Button>
-                  <Button className="btn-primary w-full">
-                    Sign Up
-                  </Button>
+                  <Link to="/login" onClick={toggleMenu}>
+                    <Button variant="ghost" className="btn-ghost w-full">
+                      Login
+                    </Button>
+                  </Link>
+                  <Link to="/signup" onClick={toggleMenu}>
+                    <Button className="btn-primary w-full">
+                      Sign Up
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </nav>

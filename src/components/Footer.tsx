@@ -25,9 +25,9 @@ const Footer = () => {
   ];
 
   const socialLinks = [
-    { icon: Twitter, href: '#', label: 'Twitter' },
-    { icon: Linkedin, href: '#', label: 'LinkedIn' },
-    { icon: Github, href: '#', label: 'GitHub' },
+    // { icon: Twitter, href: '#', label: 'Twitter' },
+    // { icon: Linkedin, href: '#', label: 'LinkedIn' },
+    // { icon: Github, href: '#', label: 'GitHub' },
     { icon: MessageCircle, href: '#', label: 'Discord' },
   ];
 
@@ -35,25 +35,23 @@ const Footer = () => {
     <footer className="bg-card border-t border-border">
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-          {/* Company Info */}
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="p-2 rounded-xl bg-primary text-primary-foreground">
-                <Bot className="h-6 w-6" />
+              <div className="p-2 rounded-xl text-primary-foreground">
+                <img src="/Main_Logo.png" alt="JobMatch AI Logo" className="h-6 w-6 object-contain" />
               </div>
-              <span className="text-xl font-bold">JobMatch AI</span>
+              <span className="text-xl font-bold">ZenithWork AI</span>
             </div>
             <p className="text-muted-foreground mb-6 max-w-md">
-              Future of Work, Today. Connecting talent with opportunities through 
+              Future of Work, Today. Connecting talent with opportunities through
               intelligent AI agents and secure blockchain technology.
             </p>
-            
-            {/* Newsletter Signup */}
+
             <div className="space-y-3">
               <h4 className="font-semibold">Get weekly job market insights</h4>
               <div className="flex space-x-2 max-w-sm">
-                <Input 
-                  placeholder="Enter your email" 
+                <Input
+                  placeholder="Enter your email"
                   className="flex-1"
                 />
                 <Button className="btn-primary">
@@ -62,14 +60,12 @@ const Footer = () => {
               </div>
             </div>
           </div>
-
-          {/* Platform Links */}
           <div>
             <h3 className="font-semibold mb-4">Platform</h3>
             <ul className="space-y-3">
               {platformLinks.map((link) => (
                 <li key={link.label}>
-                  <a 
+                  <a
                     href={link.href}
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
@@ -80,13 +76,12 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Resources Links */}
           <div>
             <h3 className="font-semibold mb-4">Resources</h3>
             <ul className="space-y-3">
               {resourceLinks.map((link) => (
                 <li key={link.label}>
-                  <a 
+                  <a
                     href={link.href}
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
@@ -97,13 +92,12 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Company Links */}
           <div>
             <h3 className="font-semibold mb-4">Company</h3>
             <ul className="space-y-3">
               {companyLinks.map((link) => (
                 <li key={link.label}>
-                  <a 
+                  <a
                     href={link.href}
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >
@@ -115,13 +109,11 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Bottom Section */}
         <div className="flex flex-col md:flex-row justify-between items-center pt-8 mt-8 border-t border-border">
           <p className="text-muted-foreground text-sm mb-4 md:mb-0">
-            © 2024 JobMatch AI. Decentralized job matching platform.
+            © 2024 ZenithWork AI. Decentralized job matching platform.
           </p>
-          
-          {/* Social Links */}
+
           <div className="flex space-x-4">
             {socialLinks.map((social) => (
               <a
