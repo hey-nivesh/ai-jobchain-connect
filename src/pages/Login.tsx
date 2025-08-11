@@ -6,28 +6,39 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { login } from "../hooks/useAuth";
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
+    setErrorMsg("");
+    try {
+      await login(email, password);
+      setTimeout(() => {
+        setIsLoading(false);
+        toast({
+          title: "Login successful!",
+          description: "Welcome back to JobMatch AI",
+        });
+        navigate('/dashboard');
+      }, 1500);
+    } catch (error: any) {
+      if (error?.message) {
+        setErrorMsg(`Login failed: ${error.message}`);
+      } else {
+        setErrorMsg("Login failed. Please check your credentials.");
+      }
       setIsLoading(false);
-      toast({
-        title: "Login successful!",
-        description: "Welcome back to JobMatch AI",
-      });
-      navigate('/dashboard');
-    }, 1500);
+    }
   };
 
   return (
@@ -60,6 +71,9 @@ const Login = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {errorMsg && (
+                <div className="text-red-500 text-center text-sm font-medium">{errorMsg}</div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-white">Email</Label>
                 <div className="relative">
@@ -135,4 +149,4 @@ const Login = () => {
   );
 };
 
-export default Login; 
+export default Login;

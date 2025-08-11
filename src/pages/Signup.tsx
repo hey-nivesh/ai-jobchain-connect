@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, ArrowLeft, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { signup } from "../hooks/useAuth";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -19,6 +20,7 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [userType, setUserType] = useState<'jobseeker' | 'employer'>('jobseeker');
+  const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -32,27 +34,27 @@ const Signup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMsg("");
 
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
+      setErrorMsg("Passwords do not match");
       setIsLoading(false);
       return;
     }
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await signup(formData.email, formData.password);
       setIsLoading(false);
       toast({
         title: "Account created successfully!",
         description: `Welcome to JobMatch AI, ${formData.firstName}!`,
       });
       navigate('/dashboard');
-    }, 1500);
+    } catch (error: any) {
+      setIsLoading(false);
+      setErrorMsg(error?.message || "Signup failed. Please try again.");
+    }
   };
 
   return (
@@ -85,6 +87,9 @@ const Signup = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {errorMsg && (
+                <div className="text-red-500 text-center text-sm font-medium">{errorMsg}</div>
+              )}
               {/* User Type Selection */}
               <div className="space-y-2">
                 <Label className="text-white">I am a:</Label>
