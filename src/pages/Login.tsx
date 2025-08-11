@@ -23,14 +23,12 @@ const Login = () => {
     setErrorMsg("");
     try {
       await login(email, password);
-      setTimeout(() => {
-        setIsLoading(false);
-        toast({
-          title: "Login successful!",
-          description: "Welcome back to JobMatch AI",
-        });
-        navigate('/dashboard');
-      }, 1500);
+      setIsLoading(false);
+      toast({
+        title: "Login successful!",
+        description: "Welcome back to JobMatch AI",
+      });
+      navigate('/dashboard');
     } catch (error: any) {
       if (error?.message) {
         setErrorMsg(`Login failed: ${error.message}`);
