@@ -22,6 +22,9 @@ const Header = () => {
 
   const navItems = [
     { label: 'Home', href: '#home' },
+    { label: 'Jobs', href: '/jobs' },
+    { label: 'Applications', href: '/applications' },
+    { label: 'Profile Setup', href: '/profile-setup' },
     { label: 'How It Works', href: '#how-it-works' },
     { label: 'For Job Seekers', href: '#job-seekers' },
     { label: 'For Employers', href: '#employers' },
@@ -48,13 +51,23 @@ const Header = () => {
 
             <nav className="hidden md:flex items-center space-x-8">
               {navItems.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="text-foreground/80 hover:text-foreground transition-colors duration-200 hover:underline underline-offset-4"
-                >
-                  {item.label}
-                </a>
+                item.href.startsWith('/') ? (
+                  <Link
+                    key={item.label}
+                    to={item.href}
+                    className="text-foreground/80 hover:text-foreground transition-colors duration-200 hover:underline underline-offset-4"
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    className="text-foreground/80 hover:text-foreground transition-colors duration-200 hover:underline underline-offset-4"
+                  >
+                    {item.label}
+                  </a>
+                )
               ))}
             </nav>
 
@@ -102,14 +115,25 @@ const Header = () => {
             <nav className="container mx-auto px-4 py-8">
               <div className="flex flex-col space-y-6">
                 {navItems.map((item) => (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    className="text-lg font-medium text-foreground hover:text-primary transition-colors"
-                    onClick={toggleMenu}
-                  >
-                    {item.label}
-                  </a>
+                  item.href.startsWith('/') ? (
+                    <Link
+                      key={item.label}
+                      to={item.href}
+                      className="text-lg font-medium text-foreground hover:text-primary transition-colors"
+                      onClick={toggleMenu}
+                    >
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      className="text-lg font-medium text-foreground hover:text-primary transition-colors"
+                      onClick={toggleMenu}
+                    >
+                      {item.label}
+                    </a>
+                  )
                 ))}
                 <div className="flex flex-col space-y-3 pt-6 border-t border-border">
                   <Link to="/login" onClick={toggleMenu}>

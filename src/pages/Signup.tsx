@@ -1,14 +1,19 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { signup } from "../hooks/useAuth";
 
-const Signup = () => {
+interface SignupProps {
+  setUserRole: (role: 'jobseeker' | 'employer') => void;
+  navigate: (path: string) => void;
+  onSignup: (email: string, password: string, userType: 'jobseeker' | 'employer') => Promise<void>;
+}
+
+const Signup = ({ setUserRole, navigate, onSignup }: SignupProps) => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -21,7 +26,6 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [userType, setUserType] = useState<'jobseeker' | 'employer'>('jobseeker');
   const [errorMsg, setErrorMsg] = useState("");
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,13 +48,12 @@ const Signup = () => {
     }
 
     try {
-      await signup(formData.email, formData.password);
+      await onSignup(formData.email, formData.password, userType);
       setIsLoading(false);
       toast({
         title: "Account created successfully!",
         description: `Welcome to JobMatch AI, ${formData.firstName}!`,
       });
-      navigate('/dashboard');
     } catch (error: any) {
       setIsLoading(false);
       setErrorMsg(error?.message || "Signup failed. Please try again.");
@@ -65,7 +68,6 @@ const Signup = () => {
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/3 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
-      
       <div className="w-full max-w-md relative z-10">
         <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl">
           <CardHeader className="space-y-1">
@@ -73,12 +75,12 @@ const Signup = () => {
               <Link to="/" className="p-2 hover:bg-white/20 hover:text-white transition-all duration-200 backdrop-blur-sm">
                 <ArrowLeft className="h-5 w-5" />
               </Link>
-                             <div className="flex items-center space-x-2">
-                 <div className="p-2 bg-white/20 backdrop-blur-sm border border-white/30">
-                   <img src="/Main_Logo.png" alt="JobMatch AI Logo" className="h-5 w-5 object-contain" />
-                 </div>
-                 <span className="text-xl font-bold text-white">Sign Up</span>
-               </div>
+              <div className="flex items-center space-x-2">
+                <div className="p-2 bg-white/20 backdrop-blur-sm border border-white/30">
+                  <img src="/Main_Logo.png" alt="JobMatch AI Logo" className="h-5 w-5 object-contain" />
+                </div>
+                <span className="text-xl font-bold text-white">Sign Up</span>
+              </div>
             </div>
             <CardTitle className="text-2xl font-bold text-center text-white">Create your account</CardTitle>
             <CardDescription className="text-center text-white/70">
@@ -124,7 +126,6 @@ const Signup = () => {
                   </button>
                 </div>
               </div>
-
               {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -154,7 +155,6 @@ const Signup = () => {
                   />
                 </div>
               </div>
-
               {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-white">Email</Label>
@@ -172,7 +172,6 @@ const Signup = () => {
                   />
                 </div>
               </div>
-
               {/* Password */}
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-white">Password</Label>
@@ -193,11 +192,10 @@ const Signup = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-3 text-white/50 hover:text-white transition-colors"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 h-4" />}
                   </button>
                 </div>
               </div>
-
               {/* Confirm Password */}
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword" className="text-white">Confirm Password</Label>
@@ -222,7 +220,6 @@ const Signup = () => {
                   </button>
                 </div>
               </div>
-
               <Button
                 type="submit"
                 className="w-full bg-white/20 text-white hover:bg-white/30 border border-white/30 font-bold backdrop-blur-sm transition-all duration-200"
@@ -230,7 +227,6 @@ const Signup = () => {
               >
                 {isLoading ? 'Creating account...' : 'Create account'}
               </Button>
-
               <div className="text-center text-sm text-white/70">
                 Already have an account?{' '}
                 <Link to="/login" className="text-white hover:text-white/80 font-medium transition-colors">
