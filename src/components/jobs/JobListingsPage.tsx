@@ -175,7 +175,7 @@ const JobListingsPage: React.FC = () => {
                     return;
                 }
 
-                const response = await fetch('/api/jobs/list/', {
+                const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/jobs/list/`, {
                     headers: {
                         'Authorization': `Bearer ${authToken}`,
                         'Content-Type': 'application/json'

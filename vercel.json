@@ -28,7 +28,7 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "https://your-backend-name.onrender.com",
-    "REACT_APP_WS_URL": "wss://your-backend-name.onrender.com"
+    "REACT_APP_API_URL": "https://ai-jobchain-connect-backend.onrender.com",
+    "REACT_APP_WS_URL": "wss://ai-jobchain-connect-backend.onrender.com"
   }
 } 

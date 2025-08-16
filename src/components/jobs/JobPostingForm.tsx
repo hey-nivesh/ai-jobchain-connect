@@ -165,7 +165,8 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted })
       };
 
       // Call the backend API
-      const response = await fetch('/api/jobs/', {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/jobs/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
