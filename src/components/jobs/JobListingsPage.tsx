@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useWebSocket, Job } from '../../hooks/useWebSocket';
+import { useWebSocket } from '../../hooks/useWebSocket';
 import { useAuth } from '../../hooks/useAuth';
 import { Bell, Zap, X, Briefcase, Search, Filter, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,12 +12,26 @@ import JobCard from './JobCard';
 import JobDetails from './JobDetails';
 import JobFilters from './JobFilters';
 import JobPostingForm from './JobPostingForm';
+import { getJobs, ApiJob } from '@/services/jobService';
+import { Job } from '@/hooks/useJobs';
 
-// Extended Job interface for the jobs page
-interface ExtendedJob extends Job {
-    requirements?: string[];
-    benefits?: string[];
-    company_logo?: string;
+// Extended Job interface for the jobs page that matches JobCard expectations
+interface ExtendedJob {
+    id: string;
+    title: string;
+    company: string;
+    location: string;
+    type: string;
+    salary: string;
+    description: string;
+    requirements: string[];
+    benefits: string[];
+    postedDate: string;
+    deadline: string;
+    applications: number;
+    status: 'active' | 'closed' | 'draft';
+    employerId: string;
+    duration: string;
     remote_work?: boolean;
     experience_level?: string;
 }
@@ -31,171 +45,64 @@ const JobListingsPage: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [sortBy, setSortBy] = useState('recent');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     
     // Get real user ID from auth context
     const { userId } = useAuth();
     const { newJobs, connectionStatus, setNewJobs } = useWebSocket(userId ? parseInt(userId) : 1);
 
-    // Sample jobs data with extended information
-    const sampleJobs: ExtendedJob[] = [
-        {
-            id: 1,
-            title: 'Senior React Developer',
-            company: 'TechCorp Inc.',
-            location: 'San Francisco, CA',
-            salary_range: '$120,000 - $150,000',
-            job_type: 'Full-time',
-            posted_date: '2024-01-15T10:30:00Z',
-            description: 'We are looking for a senior React developer to join our team and help build amazing user experiences. You will work on cutting-edge web applications and collaborate with a talented team of engineers.',
-            requirements: [
-                '5+ years of React experience',
-                'Strong TypeScript skills',
-                'Experience with modern frontend tools',
-                'Team collaboration skills'
-            ],
-            benefits: [
-                'Health Insurance',
-                'Remote Work',
-                'Stock Options',
-                '401(k)',
-                'Flexible Hours'
-            ],
-            remote_work: true,
-            experience_level: 'Senior'
-        },
-        {
-            id: 2,
-            title: 'Frontend Engineer',
-            company: 'StartupXYZ',
-            location: 'New York, NY',
-            salary_range: '$90,000 - $110,000',
-            job_type: 'Full-time',
-            posted_date: '2024-01-14T14:20:00Z',
-            description: 'Join our fast-growing startup and help shape the future of our product. We need someone who is passionate about building user-friendly web applications.',
-            requirements: [
-                '3+ years of frontend development',
-                'React/Vue.js experience',
-                'CSS and responsive design skills',
-                'Fast learner and team player'
-            ],
-            benefits: [
-                'Health Insurance',
-                'Remote Work',
-                'Equity',
-                'Unlimited PTO'
-            ],
-            remote_work: true,
-            experience_level: 'Mid-level'
-        },
-        {
-            id: 3,
-            title: 'UI/UX Designer',
-            company: 'Design Studio Pro',
-            location: 'Austin, TX',
-            salary_range: '$80,000 - $100,000',
-            job_type: 'Contract',
-            posted_date: '2024-01-13T11:45:00Z',
-            description: 'We need a creative UI/UX designer to help us create beautiful and functional interfaces. You will work closely with our development team.',
-            requirements: [
-                'Portfolio of design work',
-                'Figma/Sketch experience',
-                'User research skills',
-                'Prototyping abilities'
-            ],
-            benefits: [
-                'Flexible Schedule',
-                'Remote Work',
-                'Creative Freedom',
-                'Competitive Rate'
-            ],
-            remote_work: true,
-            experience_level: 'Mid-level'
-        },
-        {
-            id: 4,
-            title: 'Full Stack Developer',
-            company: 'Enterprise Solutions',
-            location: 'Chicago, IL',
-            salary_range: '$100,000 - $130,000',
-            job_type: 'Full-time',
-            posted_date: '2024-01-12T09:00:00Z',
-            description: 'Join our enterprise team and work on large-scale applications. We need someone with both frontend and backend experience.',
-            requirements: [
-                'Full stack development experience',
-                'Node.js and React knowledge',
-                'Database design skills',
-                'Agile methodology experience'
-            ],
-            benefits: [
-                'Health Insurance',
-                'Dental Coverage',
-                'Vision Coverage',
-                '401(k) with Match',
-                'Professional Development'
-            ],
-            remote_work: false,
-            experience_level: 'Senior'
-        },
-        {
-            id: 5,
-            title: 'DevOps Engineer',
-            company: 'CloudTech',
-            location: 'Seattle, WA',
-            salary_range: '$110,000 - $140,000',
-            job_type: 'Full-time',
-            posted_date: '2024-01-11T15:30:00Z',
-            description: 'Help us build and maintain our cloud infrastructure. We need someone with strong DevOps skills and cloud experience.',
-            requirements: [
-                'AWS/Azure experience',
-                'Docker and Kubernetes knowledge',
-                'CI/CD pipeline experience',
-                'Linux administration skills'
-            ],
-            benefits: [
-                'Health Insurance',
-                'Remote Work',
-                'Stock Options',
-                'Home Office Setup',
-                'Conference Budget'
-            ],
-            remote_work: true,
-            experience_level: 'Senior'
-        }
-    ];
-
     // Fetch jobs from backend API
     useEffect(() => {
         const fetchJobs = async () => {
             try {
-                const authToken = localStorage.getItem('authToken');
-                if (!authToken) {
-                    // Fallback to sample data if not authenticated
-                    setJobs(sampleJobs);
-                    setFilteredJobs(sampleJobs);
-                    return;
-                }
-
-                const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/jobs/list/`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`,
-                        'Content-Type': 'application/json'
+                setLoading(true);
+                const apiJobs = await getJobs();
+                console.log('Raw API jobs data:', apiJobs); // Debug log
+                const transformedJobs: ExtendedJob[] = apiJobs.map(apiJob => {
+                    // Use actual salary from API, only fallback if truly empty
+                    let salary = apiJob.salary;
+                    if (!salary || salary.trim() === '') {
+                        // Only provide fallback if salary is actually empty
+                        if (apiJob.title.toLowerCase().includes('senior') || apiJob.title.toLowerCase().includes('lead')) {
+                            salary = '$120,000 - $150,000';
+                        } else if (apiJob.title.toLowerCase().includes('junior') || apiJob.title.toLowerCase().includes('entry')) {
+                            salary = '$60,000 - $80,000';
+                        } else if (apiJob.title.toLowerCase().includes('developer') || apiJob.title.toLowerCase().includes('engineer')) {
+                            salary = '$90,000 - $120,000';
+                        } else {
+                            salary = '$80,000 - $100,000';
+                        }
                     }
+                    
+                    return {
+                        id: apiJob.id.toString(),
+                        title: apiJob.title,
+                        company: apiJob.company || 'Unknown Company',
+                        location: apiJob.location || 'Remote',
+                        salary: salary,
+                        type: apiJob.type || 'FULL_TIME',
+                        status: (apiJob.status as 'active' | 'closed' | 'draft') || 'active',
+                        applications: apiJob.applications || 0,
+                        postedDate: apiJob.postedDate || apiJob.created_at,
+                        description: apiJob.description,
+                        requirements: ['Skills matching your profile'],
+                        benefits: ['Competitive benefits'],
+                        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+                        employerId: '1',
+                        duration: 'Permanent',
+                        remote_work: true,
+                        experience_level: 'Mid-level'
+                    };
                 });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    setJobs(data.jobs);
-                    setFilteredJobs(data.jobs);
-                } else {
-                    // Fallback to sample data if API fails
-                    setJobs(sampleJobs);
-                    setFilteredJobs(sampleJobs);
-                }
-            } catch (error) {
-                console.error('Error fetching jobs:', error);
-                // Fallback to sample data on error
-                setJobs(sampleJobs);
-                setFilteredJobs(sampleJobs);
+                console.log('Transformed jobs:', transformedJobs); // Debug log
+                setJobs(transformedJobs);
+                setFilteredJobs(transformedJobs);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to fetch jobs');
+                console.error('Error fetching jobs:', err);
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -205,13 +112,42 @@ const JobListingsPage: React.FC = () => {
     // Merge new jobs with existing jobs
     useEffect(() => {
         if (newJobs.length > 0) {
-            const extendedNewJobs: ExtendedJob[] = newJobs.map(job => ({
-                ...job,
-                requirements: ['Skills matching your profile'],
-                benefits: ['Competitive benefits'],
-                remote_work: true,
-                experience_level: 'Mid-level'
-            }));
+            const extendedNewJobs: ExtendedJob[] = newJobs.map((job: any) => {
+                // Handle salary field more gracefully
+                let salary = job.salary;
+                if (!salary || salary.trim() === '') {
+                    // Provide a default salary based on job title
+                    if (job.title.toLowerCase().includes('senior') || job.title.toLowerCase().includes('lead')) {
+                        salary = '$120,000 - $150,000';
+                    } else if (job.title.toLowerCase().includes('junior') || job.title.toLowerCase().includes('entry')) {
+                        salary = '$60,000 - $80,000';
+                    } else if (job.title.toLowerCase().includes('developer') || job.title.toLowerCase().includes('engineer')) {
+                        salary = '$90,000 - $120,000';
+                    } else {
+                        salary = '$80,000 - $100,000';
+                    }
+                }
+                
+                return {
+                    id: job.id.toString(),
+                    title: job.title,
+                    company: job.company || 'Unknown Company',
+                    location: job.location || 'Remote',
+                    salary: salary,
+                    type: job.type || 'FULL_TIME',
+                    status: (job.status as 'active' | 'closed' | 'draft') || 'active',
+                    applications: job.applications || 0,
+                    postedDate: job.postedDate || job.created_at,
+                    description: job.description,
+                    requirements: ['Skills matching your profile'],
+                    benefits: ['Competitive benefits'],
+                    deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                    employerId: '1',
+                    duration: 'Permanent',
+                    remote_work: true,
+                    experience_level: 'Mid-level'
+                };
+            });
             
             setJobs(prevJobs => {
                 const existingIds = new Set(prevJobs.map(job => job.id));
@@ -237,17 +173,17 @@ const JobListingsPage: React.FC = () => {
 
         // Apply category filter
         if (selectedCategory !== 'all') {
-            filtered = filtered.filter(job => job.job_type === selectedCategory);
+            filtered = filtered.filter(job => job.type === selectedCategory);
         }
 
         // Apply sorting
         filtered.sort((a, b) => {
             switch (sortBy) {
                 case 'recent':
-                    return new Date(b.posted_date).getTime() - new Date(a.posted_date).getTime();
+                    return new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime();
                 case 'salary':
-                    const aSalary = parseInt(a.salary_range.replace(/[^0-9]/g, ''));
-                    const bSalary = parseInt(b.salary_range.replace(/[^0-9]/g, ''));
+                    const aSalary = parseInt(a.salary.replace(/[^0-9]/g, ''));
+                    const bSalary = parseInt(b.salary.replace(/[^0-9]/g, ''));
                     return bSalary - aSalary;
                 case 'company':
                     return a.company.localeCompare(b.company);
@@ -273,18 +209,45 @@ const JobListingsPage: React.FC = () => {
         setNewJobs([]);
     };
 
-    const handleApplyToJob = (jobId: number) => {
+    const handleApplyToJob = (jobId: string) => {
         console.log(`Applying to job ${jobId}`);
         // In real app, this would navigate to application form
         alert(`Application form for ${jobs.find(j => j.id === jobId)?.title} will open here`);
     };
 
     const handleJobPosted = (newJob: any) => {
+        // Handle salary field more gracefully
+        let salary = newJob.salary;
+        if (!salary || salary.trim() === '') {
+            // Provide a default salary based on job title
+            if (newJob.title.toLowerCase().includes('senior') || newJob.title.toLowerCase().includes('lead')) {
+                salary = '$120,000 - $150,000';
+            } else if (newJob.title.toLowerCase().includes('junior') || newJob.title.toLowerCase().includes('entry')) {
+                salary = '$60,000 - $80,000';
+            } else if (newJob.title.toLowerCase().includes('developer') || newJob.title.toLowerCase().includes('engineer')) {
+                salary = '$90,000 - $120,000';
+            } else {
+                salary = '$80,000 - $100,000';
+            }
+        }
+        
         // Add the new job to the jobs list
         const extendedJob: ExtendedJob = {
-            ...newJob,
-            requirements: newJob.requirements || [],
-            benefits: newJob.benefits || [],
+            id: newJob.id.toString(),
+            title: newJob.title,
+            company: newJob.company || 'Unknown Company',
+            location: newJob.location || 'Remote',
+            salary: salary,
+            type: newJob.type || 'FULL_TIME',
+            status: (newJob.status as 'active' | 'closed' | 'draft') || 'active',
+            applications: newJob.applications || 0,
+            postedDate: newJob.postedDate || newJob.created_at,
+            description: newJob.description,
+            requirements: newJob.requirements || ['Skills matching your profile'],
+            benefits: newJob.benefits || ['Competitive benefits'],
+            deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            employerId: '1',
+            duration: 'Permanent',
             remote_work: newJob.remote_work || false,
             experience_level: newJob.experience_level || 'Mid-level'
         };
@@ -298,6 +261,28 @@ const JobListingsPage: React.FC = () => {
         // For demo purposes, we'll simulate this by adding it to newJobs
         setNewJobs(prev => [newJob, ...prev]);
     };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading jobs...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-red-600 mb-4">Error: {error}</p>
+                    <Button onClick={() => window.location.reload()}>Retry</Button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -375,10 +360,11 @@ const JobListingsPage: React.FC = () => {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Types</SelectItem>
-                                <SelectItem value="Full-time">Full-time</SelectItem>
-                                <SelectItem value="Part-time">Part-time</SelectItem>
-                                <SelectItem value="Contract">Contract</SelectItem>
-                                <SelectItem value="Internship">Internship</SelectItem>
+                                <SelectItem value="FULL_TIME">Full Time</SelectItem>
+                                <SelectItem value="PART_TIME">Part Time</SelectItem>
+                                <SelectItem value="CONTRACT">Contract</SelectItem>
+                                <SelectItem value="INTERNSHIP">Internship</SelectItem>
+                                <SelectItem value="FREELANCE">Freelance</SelectItem>
                             </SelectContent>
                         </Select>
 
@@ -432,18 +418,10 @@ const JobListingsPage: React.FC = () => {
                             )}
                             
                             <JobCard 
-                                job={{
-                                    id: job.id.toString(),
-                                    title: job.title,
-                                    company: job.company,
-                                    location: job.location,
-                                    salary: job.salary_range,
-                                    type: job.job_type,
-                                    status: 'active',
-                                    applications: Math.floor(Math.random() * 20) + 1,
-                                    postedDate: new Date(job.posted_date).toLocaleDateString()
-                                }}
-                                onApply={() => handleApplyToJob(job.id)}
+                                job={job}
+                                onViewDetails={handleJobClick}
+                                onApply={handleApplyToJob}
+                                onSave={() => console.log('Save job:', job.id)}
                             />
                         </div>
                     ))}
@@ -483,24 +461,13 @@ const JobListingsPage: React.FC = () => {
                             </div>
                             
                             <JobDetails 
-                                job={{
-                                    id: selectedJob.id.toString(),
-                                    title: selectedJob.title,
-                                    company: selectedJob.company,
-                                    location: selectedJob.location,
-                                    salary: selectedJob.salary_range,
-                                    type: selectedJob.job_type,
-                                    status: 'active',
-                                    applications: Math.floor(Math.random() * 20) + 1,
-                                    postedDate: new Date(selectedJob.posted_date).toLocaleDateString(),
-                                    description: selectedJob.description,
-                                    requirements: selectedJob.requirements || [],
-                                    benefits: selectedJob.benefits || []
-                                }}
-                                onApply={() => {
-                                    handleApplyToJob(selectedJob.id);
+                                job={selectedJob}
+                                onClose={handleCloseJobDetails}
+                                onApply={(jobId, applicationData) => {
+                                    handleApplyToJob(jobId);
                                     handleCloseJobDetails();
                                 }}
+                                onSave={() => console.log('Save job:', selectedJob.id)}
                             />
                         </div>
                     </div>

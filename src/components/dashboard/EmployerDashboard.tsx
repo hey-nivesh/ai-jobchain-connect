@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Briefcase, Users, TrendingUp, Eye, MapPin, DollarSign, Clock, Plus } from 'lucide-react';
 import StatsCard from './shared/StatsCard';
 import JobPostingForm from '../jobs/JobPostingForm';
+import { useAuth } from '@/hooks/useAuth';
+import apiClient from '@/lib/api';
+import { getJobs, ApiJob } from '@/services/jobService';
 
 // Types
 interface Job {
@@ -23,102 +26,95 @@ interface EmployerStats {
   employer_name: string;
 }
 
-// Mock data for demonstration
-const mockJobs: Job[] = [
-  {
-    id: '1',
-    title: 'Senior Frontend Developer',
-    location: 'San Francisco, CA',
-    salary: '$120,000 - $150,000',
-    type: 'Full-time',
-    status: 'active',
-    applications: 15,
-    postedDate: '2024-01-15',
-  },
-  {
-    id: '2',
-    title: 'Backend Engineer',
-    location: 'New York, NY',
-    salary: '$110,000 - $140,000',
-    type: 'Full-time',
-    status: 'active',
-    applications: 8,
-    postedDate: '2024-01-10',
-  },
-  {
-    id: '3',
-    title: 'UI/UX Designer',
-    location: 'Remote',
-    salary: '$90,000 - $120,000',
-    type: 'Contract',
-    status: 'draft',
-    applications: 0,
-    postedDate: '2024-01-05',
-  },
-];
-
-const mockStats: EmployerStats = {
-  posted_jobs: 3,
-  total_applications: 23,
-  active_jobs: 2,
-  profile_views: 156,
-  employer_name: 'TechCorp Inc.',
-};
-
 const EmployerDashboard: React.FC = () => {
+  const { user, userRole, setUserRole } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [stats, setStats] = useState<EmployerStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showJobPostingForm, setShowJobPostingForm] = useState(false);
+  const isEmployer = userRole === 'employer';
+
+  const mapApiJobToEmployerJob = (j: ApiJob): Job => ({
+    id: j.id.toString(),
+    title: j.title,
+    location: j.location || 'Remote',
+    salary: 'Not specified',
+    type: 'Full-time',
+    status: 'active',
+    applications: 0,
+    postedDate: new Date(j.created_at).toISOString(),
+  });
+
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getJobs();
+      const employerUid = user?.uid || '';
+      const mine = data.filter(j => j.employer_name === employerUid);
+      const mapped = mine.map(mapApiJobToEmployerJob);
+      setJobs(mapped);
+      setStats({
+        posted_jobs: mapped.length,
+        total_applications: 0,
+        active_jobs: mapped.length,
+        profile_views: 0,
+        employer_name: user?.displayName || user?.email?.split('@')[0] || 'Employer',
+      });
+    } catch (err: any) {
+      setError('Failed to load dashboard data.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Simulate API call with mock data
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setJobs(mockJobs);
-        setStats(mockStats);
-      } catch (err: any) {
-        setError('Failed to load dashboard data.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+    if (!user) return;
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
 
-  if (loading) return <div className="text-foreground">Loading...</div>;
-  if (error) return <div className="text-destructive">{error}</div>;
-  if (!stats) return null;
-
-  const handleJobPosted = (newJob: any) => {
-    // Add the new job to the jobs list
-    const employerJob: Job = {
-      id: newJob.id.toString(),
-      title: newJob.title,
-      location: newJob.location,
-      salary: newJob.salary_range,
-      type: newJob.job_type,
-      status: 'active',
-      applications: 0,
-      postedDate: new Date(newJob.posted_date).toLocaleDateString()
-    };
-    
+  const handleJobPosted = (newJob: ApiJob) => {
+    const employerJob: Job = mapApiJobToEmployerJob(newJob);
     setJobs(prevJobs => [employerJob, ...prevJobs]);
-    
-    // Update stats
     setStats(prev => prev ? {
       ...prev,
       posted_jobs: prev.posted_jobs + 1,
       active_jobs: prev.active_jobs + 1
     } : null);
-    
-    console.log('New job posted:', newJob);
   };
+
+  const becomeEmployer = async () => {
+    try {
+      await apiClient.post('/set-role', { role: 'EMPLOYER' });
+      setUserRole('employer');
+    } catch (e) {
+      setError('Failed to switch to employer role.');
+    }
+  };
+
+  if (loading) return <div className="text-foreground">Loading...</div>;
+  if (error) return <div className="text-destructive">{error}</div>;
+
+  if (!isEmployer) {
+    return (
+      <div className="space-y-6 p-6">
+        <div className="bg-card/50 backdrop-blur-md border border-border rounded-2xl p-6">
+          <h1 className="text-2xl font-bold text-foreground mb-2">Switch to Employer</h1>
+          <p className="text-muted-foreground mb-4">You need an employer role to manage job postings.</p>
+          <button 
+            onClick={becomeEmployer}
+            className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-black px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition-all duration-300"
+          >
+            Become Employer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) return null;
 
   const statCards = [
     { label: 'Posted Jobs', value: stats.posted_jobs, icon: Briefcase, color: 'from-blue-500 to-blue-600' },
@@ -159,7 +155,7 @@ const EmployerDashboard: React.FC = () => {
           </button>
         </div>
         <div className="space-y-4">
-          {jobs.slice(0, 3).map(job => (
+          {jobs.slice(0, 10).map(job => (
             <div
               key={job.id}
               className="bg-card/30 border border-border rounded-xl p-4 hover:bg-card/50 transition-all duration-300"
@@ -209,8 +205,6 @@ const EmployerDashboard: React.FC = () => {
           ))}
         </div>
       </div>
-      {/* You can add analytics and quick actions here as needed */}
-
       {/* Job Posting Form Modal */}
       {showJobPostingForm && (
         <JobPostingForm
