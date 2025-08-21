@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import Header from '@/components/Header';
 import HeroParallax from '@/components/HeroParallax';
 import AboutSection from '@/components/AboutSection';
@@ -5,6 +6,10 @@ import TestimonialsSection from '@/components/TestimonialsSection';
 import Footer from '@/components/Footer';
 
 const Index = () => {
+  useEffect(() => {
+    console.log('Index component mounted successfully');
+  }, []);
+
   const products = [
     {
       title: "Smart Resume Analysis",
