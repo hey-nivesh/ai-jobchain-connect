@@ -17,6 +17,7 @@ import ProfileWizard from "./components/ProfileSetup/ProfileWizard";
 import JobListingsPage from "./components/jobs/JobListingsPage";
 import { AppProvider, useApp } from "./context/AppContext";
 import { AuthProvider, useAuth, login as authLogin, signup as authSignup } from "./hooks/useAuth";
+import apiClient from "@/lib/api";
 
 const queryClient = new QueryClient();
 
@@ -24,7 +25,6 @@ const queryClient = new QueryClient();
 const DashboardWrapper: React.FC = () => {
   const { userRole, isAuthenticated } = useAuth();
   
-  // If not authenticated, redirect to login
   if (!isAuthenticated) {
     return <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
@@ -36,7 +36,6 @@ const DashboardWrapper: React.FC = () => {
   
   if (userRole === "jobseeker") return <JobSeekerDashboard />;
   if (userRole === "employer") return <EmployerDashboard />;
-  // fallback: redirect to login if no role is set
   return <div className="flex items-center justify-center min-h-screen">
     <div className="text-center">
       <h1 className="text-2xl font-bold mb-4">Please log in to access your dashboard</h1>
@@ -60,6 +59,7 @@ const App = () => {
                   <Route path="/login" element={<LoginWithRole />} />
                   <Route path="/signup" element={<SignupWithRole />} />
                   <Route path="/dashboard" element={<DashboardWrapper />} />
+                  <Route path="/employer" element={<EmployerDashboard />} />
                   <Route path="/jobs" element={<JobListingsPage />} />
                   <Route path="/applications" element={<DemoApplicationsPage />} />
                   <Route path="/profile-setup" element={<ProfileWizard />} />
@@ -83,9 +83,7 @@ const LoginWithRole: React.FC = () => {
   const handleLogin = async (email: string, password: string) => {
     try {
       const userData = await authLogin(email, password);
-      // Set authentication state
       setAuthUser(userData);
-      // Set role based on user data (default to jobseeker for now)
       setUserRole(userData.userType === 'employer' ? 'employer' : 'jobseeker');
       navigate('/dashboard');
     } catch (error) {
@@ -105,10 +103,14 @@ const SignupWithRole: React.FC = () => {
   const handleSignup = async (email: string, password: string, userType: 'jobseeker' | 'employer') => {
     try {
       const userData = await authSignup(email, password, userType);
-      // Set authentication state
       setAuthUser(userData);
-      // Set role based on user type
       setUserRole(userType);
+      // sync role to backend immediately
+      try {
+        await apiClient.post('/set-role', { role: userType === 'employer' ? 'EMPLOYER' : 'JOB_SEEKER' });
+      } catch (e) {
+        console.warn('Failed to sync role to backend on signup');
+      }
       navigate('/dashboard');
     } catch (error) {
       console.error('Signup error:', error);

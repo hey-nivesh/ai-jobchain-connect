@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getJobs, ApiJob } from '@/services/jobService';
 
 export interface Job {
   id: string;
@@ -6,94 +7,85 @@ export interface Job {
   company: string;
   location: string;
   salary: string;
-  type: 'full-time' | 'part-time';
+  type: string;
+  status: 'active' | 'closed' | 'draft';
+  applications: number;
+  postedDate: string;
+  description: string;
 }
 
-const mockJobs: Job[] = [
-  {
-    id: '1',
-    title: 'Senior Frontend Developer',
-    company: 'TechCorp Inc.',
-    location: 'San Francisco, CA',
-    salary: '$120k - $150k',
-    type: 'full-time'
-  },
-  {
-    id: '2',
-    title: 'Product Manager',
-    company: 'InnovateLabs',
-    location: 'New York, NY',
-    salary: '$130k - $160k',
-    type: 'full-time'
-  },
-  {
-    id: '3',
-    title: 'UX Designer',
-    company: 'Design Studio',
-    location: 'Remote',
-    salary: '$80k - $100k',
-    type: 'full-time'
-  },
-  {
-    id: '4',
-    title: 'Backend Developer',
-    company: 'StartupXYZ',
-    location: 'Austin, TX',
-    salary: '$90k - $120k',
-    type: 'part-time'
-  },
-  {
-    id: '5',
-    title: 'Data Scientist',
-    company: 'DataFlow',
-    location: 'Seattle, WA',
-    salary: '$140k - $170k',
-    type: 'full-time'
-  },
-  {
-    id: '6',
-    title: 'Mobile Developer',
-    company: 'AppWorks',
-    location: 'Los Angeles, CA',
-    salary: '$100k - $130k',
-    type: 'full-time'
-  },
-  {
-    id: '7',
-    title: 'DevOps Engineer',
-    company: 'CloudTech',
-    location: 'Remote',
-    salary: '$110k - $140k',
-    type: 'full-time'
-  },
-  {
-    id: '8',
-    title: 'UI/UX Designer',
-    company: 'Creative Agency',
-    location: 'Chicago, IL',
-    salary: '$85k - $110k',
-    type: 'part-time'
-  }
-];
-
 export const useJobs = () => {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredJobs, setFilteredJobs] = useState<Job[]>(mockJobs);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const filtered = mockJobs.filter(job =>
+    const fetchJobs = async () => {
+      try {
+        setLoading(true);
+        const apiJobs = await getJobs();
+        console.log('useJobs - Raw API data:', apiJobs); // Debug log
+        const transformedJobs: Job[] = apiJobs.map(apiJob => {
+          // Use actual salary from API, only fallback if truly empty
+          let salary = apiJob.salary;
+          if (!salary || salary.trim() === '') {
+            // Only provide fallback if salary is actually empty
+            if (apiJob.title.toLowerCase().includes('senior') || apiJob.title.toLowerCase().includes('lead')) {
+              salary = '$120,000 - $150,000';
+            } else if (apiJob.title.toLowerCase().includes('junior') || apiJob.title.toLowerCase().includes('entry')) {
+              salary = '$60,000 - $80,000';
+            } else if (apiJob.title.toLowerCase().includes('developer') || apiJob.title.toLowerCase().includes('engineer')) {
+              salary = '$90,000 - $120,000';
+            } else {
+              salary = '$80,000 - $100,000';
+            }
+          }
+          
+          return {
+            id: apiJob.id.toString(),
+            title: apiJob.title,
+            company: apiJob.company || 'Unknown Company',
+            location: apiJob.location || 'Remote',
+            salary: salary,
+            type: apiJob.type || 'FULL_TIME',
+            status: (apiJob.status as 'active' | 'closed' | 'draft') || 'active',
+            applications: apiJob.applications || 0,
+            postedDate: apiJob.postedDate || apiJob.created_at,
+            description: apiJob.description,
+          };
+        });
+        console.log('useJobs - Transformed jobs:', transformedJobs); // Debug log
+        setJobs(transformedJobs);
+        setFilteredJobs(transformedJobs);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch jobs');
+        console.error('Error fetching jobs:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
+
+  useEffect(() => {
+    const filtered = jobs.filter(job =>
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.location.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredJobs(filtered);
-  }, [searchTerm]);
+  }, [searchTerm, jobs]);
 
   return {
-    jobs: mockJobs,
+    jobs,
     filteredJobs,
     searchTerm,
     setSearchTerm,
-    totalJobs: mockJobs.length
+    totalJobs: jobs.length,
+    loading,
+    error
   };
 }; 
