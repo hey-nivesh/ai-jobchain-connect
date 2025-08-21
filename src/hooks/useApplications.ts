@@ -245,7 +245,7 @@ const useApplications = () => {
     };
     
     applications.forEach(app => {
-      if (Object.prototype.hasOwnProperty.call(stats, app.status)) {
+      if (Object.hasOwn(stats, app.status)) {
         stats[app.status]++;
       }
     });

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { useMemo , createContext, useContext, useState, ReactNode } from 'react';
 
 export type UserRole = 'jobseeker' | 'employer' | null;
 
@@ -13,7 +13,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [userRole, setUserRole] = useState<UserRole>(null);
 
   return (
-    <AppContext.Provider value={{ userRole, setUserRole }}>
+    <AppContext.Provider value={useMemo(() => ({ userRole, setUserRole }), [userRole, setUserRole])}>
       {children}
     </AppContext.Provider>
   );
