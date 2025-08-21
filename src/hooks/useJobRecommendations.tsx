@@ -12,7 +12,7 @@ interface JobRecommendation {
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
 export const useJobRecommendations = () => {
-  const { user, userRole } = useAuth();
+  const { userRole } = useAuth();
   const [recommendations, setRecommendations] = useState<JobRecommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
