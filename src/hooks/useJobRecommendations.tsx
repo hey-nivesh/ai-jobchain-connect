@@ -1,12 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from './useAuth';
-import { getAIJobRecommendations } from '@/services/aiservice';
-
-export interface JobRecommendation {
-  title: string;
-  description: string;
-  matchScore: number;
-}
+import { aiService } from '../services/aiService';
+import { JobRecommendation } from '../types/recommendation';
 
 export const useJobRecommendations = () => {
   const { userRole } = useAuth();
@@ -21,7 +16,10 @@ export const useJobRecommendations = () => {
     setError(null); // Clear previous errors
     
     try {
-      const result = await getAIJobRecommendations(userSkills, preferences);
+      const result = await aiService.getJobRecommendations({
+        ...preferences,
+        skills: userSkills
+      });
       setRecommendations(result);
     } catch (err: any) {
       console.error('Error getting job recommendations:', err);

@@ -12,7 +12,7 @@ import {
 
 const Sidebar: React.FC = () => {
   // Mock state for demonstration
-  const [userRole, setUserRole] = useState<'jobseeker' | 'employer'>('jobseeker');
+  const [userRole] = useState<'jobseeker' | 'employer'>('jobseeker');
   const [currentView, setCurrentView] = useState<string>('dashboard');
 
   const jobSeekerMenuItems = [

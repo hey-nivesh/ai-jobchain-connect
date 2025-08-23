@@ -2,24 +2,7 @@ import React from 'react';
 import { MapPin, DollarSign, Clock, Building, Bookmark, Eye, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-
-interface Job {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  type: string;
-  salary: string;
-  description: string;
-  requirements: string[];
-  benefits: string[];
-  postedDate: string;
-  deadline: string;
-  applications: number;
-  status: 'active' | 'closed' | 'draft';
-  employerId: string;
-  duration: string;
-}
+import { Job } from '../../hooks/useWebSocket';
 
 interface JobCardProps {
   job: Job;
@@ -58,9 +41,12 @@ const JobCard: React.FC<JobCardProps> = ({
       {/* Header */}
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
-          <h3 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors cursor-pointer" onClick={() => onViewDetails(job)}>
+          <button
+            onClick={() => onViewDetails(job)}
+            className="text-left text-xl font-semibold text-foreground group-hover:text-primary transition-colors cursor-pointer bg-transparent border-none p-0"
+          >
             {job.title}
-          </h3>
+          </button>
           <div className="flex items-center space-x-2 mt-1">
             <Building className="w-4 h-4 text-muted-foreground" />
             <span className="text-muted-foreground font-medium">{job.company}</span>
@@ -113,7 +99,7 @@ const JobCard: React.FC<JobCardProps> = ({
       {/* Requirements Preview */}
       <div className="flex flex-wrap gap-2 mb-4">
         {job.requirements.slice(0, 3).map((req, index) => (
-          <Badge key={index} variant="secondary" className="text-xs">
+          <Badge key={req} variant="secondary" className="text-xs">
             {req}
           </Badge>
         ))}
@@ -127,7 +113,7 @@ const JobCard: React.FC<JobCardProps> = ({
       {/* Footer */}
       <div className="flex justify-between items-center pt-4 border-t border-border">
         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-          <span>Posted {job.postedDate}</span>
+          <span>Posted {job.created_at}</span>
           <span>•</span>
           <span>{job.applications} applications</span>
         </div>

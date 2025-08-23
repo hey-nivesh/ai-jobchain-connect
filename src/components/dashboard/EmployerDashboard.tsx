@@ -63,7 +63,7 @@ const EmployerDashboard: React.FC = () => {
         employer_name: user?.displayName || user?.email?.split('@')[0] || 'Employer',
       });
     } catch (err: any) {
-      setError('Failed to load dashboard data.');
+      console.error('Failed to load dashboard data.', err);
     } finally {
       setLoading(false);
     }
@@ -90,7 +90,7 @@ const EmployerDashboard: React.FC = () => {
       await apiClient.post('/set-role', { role: 'EMPLOYER' });
       setUserRole('employer');
     } catch (e) {
-      setError('Failed to switch to employer role.');
+      console.error('Failed to switch to employer role.', e);
     }
   };
 
@@ -116,6 +116,15 @@ const EmployerDashboard: React.FC = () => {
 
   if (!stats) return null;
 
+  const statusStyles: Record<string, string> = {
+    active: 'bg-green-500/20 text-green-600 dark:text-green-400',
+    draft: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
+    archived: 'bg-red-500/20 text-red-600 dark:text-red-400',
+  };
+
+  const getStatusClasses = (status: string) =>
+    statusStyles[status] || 'bg-gray-300 text-gray-700';
+
   const statCards = [
     { label: 'Posted Jobs', value: stats.posted_jobs, icon: Briefcase, color: 'from-blue-500 to-blue-600' },
     { label: 'Total Applications', value: stats.total_applications, icon: Users, color: 'from-green-500 to-green-600' },
@@ -137,8 +146,8 @@ const EmployerDashboard: React.FC = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat, index) => (
-          <StatsCard key={index} label={stat.label} value={stat.value} icon={stat.icon} color={stat.color} />
+        {statCards.map((stat) => (
+          <StatsCard key={stat.label} label={stat.label} value={stat.value} icon={stat.icon} color={stat.color} />
         ))}
       </div>
 
@@ -178,13 +187,7 @@ const EmployerDashboard: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-4 mt-3">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      job.status === 'active'
-                        ? 'bg-green-500/20 text-green-600 dark:text-green-400'
-                        : job.status === 'draft'
-                        ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'
-                        : 'bg-red-500/20 text-red-600 dark:text-red-400'
-                    }`}>
+                    <span className={`px-2 py-1 rounded-full text-xs ${getStatusClasses(job.status)}`}>
                       {job.status}
                     </span>
                     <span className="text-muted-foreground text-sm">
