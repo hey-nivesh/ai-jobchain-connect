@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 
 // Type definitions
-type JobStatus = 'active' | 'closed' | 'draft';
-type JobType = 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'REMOTE';
-type ExperienceLevel = 'Entry' | 'Mid-level' | 'Senior' | 'Lead' | 'Executive';
+export type JobStatus = 'active' | 'closed' | 'draft';
+export type JobType = 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'REMOTE';
+export type ExperienceLevel = 'Entry' | 'Mid-level' | 'Senior' | 'Lead' | 'Executive';
 
 // Raw job data from API/WebSocket
 interface RawJob {
@@ -27,7 +27,7 @@ export interface Job {
     company: string;
     location: string;
     salary: string;
-    type: JobType;
+    job_type: JobType;
     description: string;
     status: JobStatus;
     applications: number;
@@ -81,7 +81,7 @@ const transformJob = (rawJob: RawJob, matchScore?: number): Job => {
         company: rawJob.company || 'Unknown Company',
         location: rawJob.location || 'Remote',
         salary: rawJob.salary || defaultSalary(rawJob.title),
-        type: rawJob.type || 'FULL_TIME',
+        job_type: rawJob.type || 'FULL_TIME',
         description: rawJob.description,
         status: rawJob.status || 'active',
         applications: rawJob.applications || 0,
@@ -105,7 +105,7 @@ export const transformedJobs = (rawJob: RawJob, matchScore?: number): Job => ({
     company: rawJob.company || 'Unknown Company',
     location: rawJob.location || 'Remote',
     salary: rawJob.salary || '',
-    type: rawJob.type || 'FULL_TIME',
+    job_type: rawJob.type || 'FULL_TIME',
     description: rawJob.description || '',
     status: rawJob.status || 'active',
     applications: rawJob.applications || 0,

@@ -80,7 +80,7 @@ const JobListingsPage: React.FC = () => {
 
         // Apply category filter
         if (selectedCategory !== 'all') {
-            filtered = filtered.filter(job => job.type === selectedCategory);
+            filtered = filtered.filter(job => job.job_type === selectedCategory);
         }
 
         // Apply sorting
@@ -134,7 +134,7 @@ const JobListingsPage: React.FC = () => {
             company: newJob.company || 'Unknown Company',
             location: newJob.location || 'Remote',
             salary: newJob.salary || '',
-            type: newJob.type || 'FULL_TIME',
+            job_type: newJob.job_type || 'FULL_TIME',
             description: newJob.description || '',
             status: newJob.status || 'active',
             applications: newJob.applications || 0,

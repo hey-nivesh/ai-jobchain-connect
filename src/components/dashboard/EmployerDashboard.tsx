@@ -4,20 +4,10 @@ import StatsCard from './shared/StatsCard';
 import JobPostingForm from '../jobs/JobPostingForm';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/lib/api';
-import { getJobs, ApiJob } from '@/services/jobService';
+import { getJobs, ApiJob, deleteJob } from '@/services/jobService';
+import { Job, JobType, JobStatus, ExperienceLevel } from '../../hooks/useWebSocket';
 
 // Types
-interface Job {
-  id: string;
-  title: string;
-  location: string;
-  salary: string;
-  type: string;
-  status: 'active' | 'closed' | 'draft';
-  applications: number;
-  postedDate: string;
-}
-
 interface EmployerStats {
   posted_jobs: number;
   total_applications: number;
@@ -33,17 +23,33 @@ const EmployerDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showJobPostingForm, setShowJobPostingForm] = useState(false);
+  const [editJob, setEditJob] = useState<Job | null>(null);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [viewJob, setViewJob] = useState<Job | null>(null);
+  const [showViewForm, setShowViewForm] = useState(false);
   const isEmployer = userRole === 'employer';
 
   const mapApiJobToEmployerJob = (j: ApiJob): Job => ({
     id: j.id.toString(),
     title: j.title,
+    company: j.company || 'Unknown Company',
     location: j.location || 'Remote',
-    salary: 'Not specified',
-    type: 'Full-time',
-    status: 'active',
-    applications: 0,
-    postedDate: new Date(j.created_at).toISOString(),
+    salary: j.salary || '',
+    job_type: (j.job_type as JobType) || 'FULL_TIME',
+    description: j.description || '',
+    status: (j.status as JobStatus) || 'active',
+    applications: j.applications || 0,
+    created_at: j.created_at || new Date().toISOString(),
+    employer_name: j.employer_name || j.company || 'Unknown Company',
+    requirements: j.requirements || [],
+    benefits: j.benefits || [],
+    deadline: j.deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    duration: j.duration || 'Permanent',
+    remote_work: j.remote_work ?? true,
+    experience_level: (j.experience_level as ExperienceLevel) || 'Entry',
+    match_score: j.match_score,
+    reasons_for_match: j.reasons_for_match,
+    featured: j.featured ?? false,
   });
 
   const loadData = async () => {
@@ -82,6 +88,14 @@ const EmployerDashboard: React.FC = () => {
       ...prev,
       posted_jobs: prev.posted_jobs + 1,
       active_jobs: prev.active_jobs + 1
+    } : null);
+  };
+
+  const handleEditSave = (updatedJob: ApiJob) => {
+    setJobs(prevJobs => prevJobs.map(job => job.id === updatedJob.id.toString() ? mapApiJobToEmployerJob(updatedJob) : job));
+    setStats(prev => prev ? {
+      ...prev,
+      active_jobs: prev.active_jobs + (updatedJob.status === 'active' ? 1 : 0) - (updatedJob.status === 'closed' ? 1 : 0),
     } : null);
   };
 
@@ -132,6 +146,31 @@ const EmployerDashboard: React.FC = () => {
     { label: 'Profile Views', value: stats.profile_views, icon: Eye, color: 'from-yellow-500 to-yellow-600' }
   ];
 
+  const handleEditJob = (job: Job) => {
+    setEditJob(job);
+    setShowEditForm(true);
+    setJobs(prev => prev.filter(j => j.id !== job.id));
+  };
+
+  const handleDeleteJob = (job: Job) => {
+    deleteJob(Number(job.id));
+    setJobs(prev => prev.filter(j => j.id !== job.id));
+    setStats(prev =>
+      prev
+        ? { 
+            ...prev, 
+            posted_jobs: prev.posted_jobs - 1, 
+            active_jobs: prev.active_jobs - 1 
+          }
+        : null
+    );
+  };
+
+  const handleViewJob = (job: Job) => {
+    setViewJob(job);
+    setShowViewForm(true);
+  };
+
   return (
     <div className="space-y-6 p-6">
       {/* Welcome Section */}
@@ -164,7 +203,7 @@ const EmployerDashboard: React.FC = () => {
           </button>
         </div>
         <div className="space-y-4">
-          {jobs.slice(0, 10).map(job => (
+          {jobs.map(job => (
             <div
               key={job.id}
               className="bg-card/30 border border-border rounded-xl p-4 hover:bg-card/50 transition-all duration-300"
@@ -183,7 +222,7 @@ const EmployerDashboard: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-1">
                       <Clock className="w-4 h-4" />
-                      <span>{job.type}</span>
+                      <span>{job.job_type}</span>
                     </div>
                   </div>
                   <div className="flex items-center space-x-4 mt-3">
@@ -196,10 +235,16 @@ const EmployerDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex space-x-2">
-                  <button className="bg-secondary text-secondary-foreground px-3 py-2 rounded-lg text-sm hover:bg-secondary/80 transition-colors">
+                  <button className="bg-secondary text-secondary-foreground px-3 py-2 rounded-lg text-sm hover:bg-secondary/80 transition-colors" onClick={() => {handleEditJob(job);}}>
                     Edit
                   </button>
-                  <button className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-black px-3 py-2 rounded-lg text-sm font-semibold hover:shadow-lg transition-all duration-300">
+                  <button
+                    className="bg-secondary text-secondary-foreground px-3 py-2 rounded-lg text-sm hover:bg-secondary/80 transition-colors"
+                    onClick={() => {handleDeleteJob(job);}}>
+                    Delete
+                  </button>
+                  <button className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-black px-3 py-2 rounded-lg text-sm font-semibold hover:shadow-lg transition-all duration-300"
+                  onClick={() => {handleViewJob(job);}}>
                     View
                   </button>
                 </div>
@@ -213,6 +258,22 @@ const EmployerDashboard: React.FC = () => {
         <JobPostingForm
           onClose={() => setShowJobPostingForm(false)}
           onJobPosted={handleJobPosted}
+        />
+      )}
+      {showEditForm && editJob && (
+        <JobPostingForm
+          job={editJob}
+          onClose={() => { setShowEditForm(false); setEditJob(null); }}
+          onSave={handleEditSave}
+          isEdit={true}
+        />
+      )}
+      {showViewForm && viewJob && (
+        <JobPostingForm
+          job={viewJob}
+          onClose={() => { setShowViewForm(false); setViewJob(null); }}
+          isEdit={false}
+          isView={true}
         />
       )}
     </div>
