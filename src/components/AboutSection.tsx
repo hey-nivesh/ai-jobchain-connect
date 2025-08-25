@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Bot, Shield, Globe, TrendingUp, Users, Zap, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 const AboutSection = () => {
   const features = [
@@ -142,18 +143,22 @@ const AboutSection = () => {
             their perfect career match through our AI-powered platform.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="btn-primary text-lg px-8 py-4 rounded-full">
-              <Users className="mr-2 h-5 w-5" />
-              For Job Seekers
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="lg" 
-              className="btn-ghost text-lg px-8 py-4 rounded-full"
-            >
-              <Bot className="mr-2 h-5 w-5" />
-              For Employers
-            </Button>
+            <Link to="/login?role=jobseeker" className="inline-block">
+              <Button size="lg" className="btn-primary text-lg px-8 py-4 rounded-full">
+                <Users className="mr-2 h-5 w-5" />
+                For Job Seekers
+              </Button>
+            </Link>
+            <Link to="/login?role=employer" className="inline-block">
+              <Button 
+                variant="ghost" 
+                size="lg" 
+                className="btn-ghost text-lg px-8 py-4 rounded-full"
+              >
+                <Bot className="mr-2 h-5 w-5" />
+                For Employers
+              </Button>
+            </Link>
           </div>
         </motion.div>
       </div>

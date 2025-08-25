@@ -73,8 +73,13 @@ export const useProfileData = (userId: string): UseProfileDataReturn => {
         ...profileData,
         ...updates
       } as ProfileData);
-      setProfileData(prev => ({ ...prev, ...updatedData } as ProfileData));
-      return updatedData;
+      setProfileData((prev : ProfileData) => {
+        return {
+          ...prev,
+          ...(typeof updatedData === 'object' && updatedData !== null ? updatedData : {})
+        };
+      });
+      return updatedData as ProfileData;
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to update profile';
       setError(errorMessage);

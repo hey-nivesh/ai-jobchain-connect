@@ -33,9 +33,9 @@ export const userService = {
   getProfile: async (userId: string): Promise<ProfileData> => {
     try {
       const response = await apiClient.get(`/users/${userId}/profile/`);
-      return response.data;
+      return response.data as ProfileData;
     } catch (error: any) {
-      throw error.response?.data || error.message;
+      throw new Error(error.response?.data || error.message);
     }
   },
 
@@ -64,7 +64,7 @@ export const userService = {
           const progress = (progressEvent.loaded / progressEvent.total) * 100;
           console.log(`Upload Progress: ${progress}%`);
         },
-      });
+      } as any);
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error.message;

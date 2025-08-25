@@ -11,9 +11,7 @@ import {
   Bookmark,
   Share2,
   Send,
-  FileText,
-  ExternalLink
-} from 'lucide-react';
+  FileText} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,24 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-
-interface Job {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  type: string;
-  salary: string;
-  description: string;
-  requirements: string[];
-  benefits: string[];
-  postedDate: string;
-  deadline: string;
-  applications: number;
-  status: 'active' | 'closed' | 'draft';
-  employerId: string;
-  duration: string;
-}
+import { Job } from '../../hooks/useWebSocket';
 
 interface JobDetailsProps {
   job: Job;
@@ -109,7 +90,7 @@ const JobDetails: React.FC<JobDetailsProps> = ({
               {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
             </Badge>
             <span className="text-sm text-muted-foreground">
-              Posted {formatDate(job.postedDate)}
+              Posted {formatDate(job.created_at)}
             </span>
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2">{job.title}</h1>
@@ -200,8 +181,8 @@ const JobDetails: React.FC<JobDetailsProps> = ({
         </CardHeader>
         <CardContent>
           <ul className="space-y-2">
-            {job.requirements.map((req, index) => (
-              <li key={index} className="flex items-start space-x-3">
+            {job.requirements.map((req) => (
+              <li key={req} className="flex items-start space-x-3">
                 <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
                 <span className="text-muted-foreground">{req}</span>
               </li>
@@ -217,8 +198,8 @@ const JobDetails: React.FC<JobDetailsProps> = ({
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            {job.benefits.map((benefit, index) => (
-              <Badge key={index} variant="secondary" className="text-sm">
+            {job.benefits.map((benefit) => (
+              <Badge key={benefit} variant="secondary" className="text-sm">
                 {benefit}
               </Badge>
             ))}

@@ -1,40 +1,60 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { X, Plus, Briefcase, MapPin, DollarSign, Clock, Users, Building2 } from 'lucide-react';
+import { X, Briefcase, Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { createJob } from '@/services/jobService';
+import { createJob, ApiJob, updateJob } from '@/services/jobService';
+import { Job } from '@/hooks/useWebSocket';
 
-interface JobPostingFormProps {
+export interface JobPostingFormProps {
+	job?: Job;
 	onClose: () => void;
-	onJobPosted: (job: any) => void;
+	onJobPosted?: (job: any) => void;
+	onSave?: (updatedJob: ApiJob) => void; // <-- Add this line
+	isEdit?: boolean;
+	isView?: boolean;
 }
 
-interface JobFormData {
+interface JobFormData extends Job {
 	title: string;
 	company: string;
 	location: string;
 	description: string;
 	salary: string;
-	job_type: string;
-	status: string;
+	job_type: Job['job_type'];
+	status: Job['status'];
 }
 
-const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted }) => {
-	const [formData, setFormData] = useState<JobFormData>({
-		title: '',
-		company: '',
-		location: '',
-		description: '',
-		salary: '',
-		job_type: 'FULL_TIME',
-		status: 'active',
-	});
+const getInitialFormData = (job?: Job): JobFormData => ({
+	id: job?.id || '',
+	title: job?.title || '',
+	company: job?.company || '',
+	location: job?.location || '',
+	description: job?.description || '',
+	salary: job?.salary || '',
+	job_type: job?.job_type || 'FULL_TIME',
+	status: job?.status || 'active',
+	applications: job?.applications || 0,
+	created_at: job?.created_at || new Date().toISOString(),
+	employer_name: job?.employer_name || '',
+	requirements: job?.requirements || [],
+	benefits: job?.benefits || [],
+	deadline: job?.deadline || '',
+	duration: job?.duration || '',
+	remote_work: job?.remote_work || false,
+	experience_level: job?.experience_level || 'Entry',
+	match_score: job?.match_score,
+	reasons_for_match: job?.reasons_for_match,
+	featured: job?.featured || false,
+});
+
+const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, job, onSave, isEdit, isView }) => {
+	const initialFormData = useMemo(() => getInitialFormData(job), [job]);
+	const [formData, setFormData] = useState<JobFormData>(initialFormData);
 
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const { toast } = useToast();
@@ -63,26 +83,25 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted })
 		if (!validateForm()) return;
 		setIsSubmitting(true);
 		try {
-			const newJob = await createJob({
-				title: formData.title,
-				company: formData.company,
-				description: formData.description,
-				location: formData.location,
-				salary: formData.salary,
-				job_type: formData.job_type,
-				status: formData.status,
-			});
-			onJobPosted(newJob);
-			toast({
-				title: "Job Posted Successfully!",
-				description: `"${formData.title}" is now live and visible to job seekers.`,
-			});
+			const payload = {
+				...formData,
+				id: formData.id ? Number(formData.id) : undefined, // Ensure id is a number
+			};
+			let result;
+			if (isEdit && job) {
+				// Editing existing job
+				result = await updateJob(job.id, payload);
+			} else {
+				// Creating new job
+				result = await createJob(payload);
+			}
+			if (onJobPosted) onJobPosted(result);
+			if (onSave) onSave(result);
 			onClose();
-		} catch (error) {
-			console.error('Error posting job:', error);
+		} catch (error: any) {
 			toast({
-				title: "Error Posting Job",
-				description: error instanceof Error ? error.message : "There was an error posting your job. Please try again.",
+				title: "Error",
+				description: error.message || "Failed to save job.",
 				variant: "destructive"
 			});
 		} finally {
@@ -210,7 +229,7 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted })
 							</CardContent>
 						</Card>
 
-						<div className="flex justify-end space-x-3 pt-4 border-t">
+						{isView ? (<div></div>) : (<div className="flex justify-end space-x-3 pt-4 border-t">
 							<Button
 								type="button"
 								variant="outline"
@@ -224,9 +243,10 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted })
 								disabled={isSubmitting}
 								className="bg-blue-600 hover:bg-blue-700"
 							>
-								{isSubmitting ? 'Posting Job...' : 'Post Job'}
+								{isSubmitting ? 'Posting Job...' : ''}
+								{isEdit ? 'Edit Job' : 'Post Job'}
 							</Button>
-						</div>
+						</div>)}
 					</form>
 				</div>
 			</div>

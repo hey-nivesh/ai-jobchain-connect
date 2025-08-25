@@ -15,7 +15,7 @@ import EmployerDashboard from "./components/dashboard/EmployerDashboard";
 import DemoApplicationsPage from "./components/applications/DemoApplicationsPage";
 import ProfileWizard from "./components/ProfileSetup/ProfileWizard";
 import JobListingsPage from "./components/jobs/JobListingsPage";
-import { AppProvider, useApp } from "./context/AppContext";
+import { AppProvider } from "./context/AppContext";
 import { AuthProvider, useAuth, login as authLogin, signup as authSignup } from "./hooks/useAuth";
 import apiClient from "@/lib/api";
 
@@ -110,6 +110,7 @@ const SignupWithRole: React.FC = () => {
         await apiClient.post('/set-role', { role: userType === 'employer' ? 'EMPLOYER' : 'JOB_SEEKER' });
       } catch (e) {
         console.warn('Failed to sync role to backend on signup');
+        console.error('Error syncing role to backend on signup:', e);
       }
       navigate('/dashboard');
     } catch (error) {
