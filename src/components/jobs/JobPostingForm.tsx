@@ -140,26 +140,10 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, j
 		if (!validateForm()) return;
 		setIsSubmitting(true);
 		try {
-<<<<<<< HEAD
-			const newJob = await createJob({
-				title: formData.title,
-				company: formData.company,
-				description: formData.description,
-				location: formData.location,
-				salary: formData.salary,
-				job_type: formData.job_type,
-				status: formData.status,
-				skill_ids: formData.skill_ids,
-			});
-			onJobPosted(newJob);
-			toast({
-				title: "Job Posted Successfully!",
-				description: `"${formData.title}" is now live and visible to job seekers.`,
-			});
-=======
 			const payload = {
 				...formData,
 				id: formData.id ? Number(formData.id) : undefined, // Ensure id is a number
+				skill_ids: formData.skill_ids,
 			};
 			let result;
 			if (isEdit && job) {
@@ -169,9 +153,14 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, j
 				// Creating new job
 				result = await createJob(payload);
 			}
+			
+			toast({
+				title: "Job Posted Successfully!",
+				description: `"${formData.title}" is now live and visible to job seekers.`,
+			});
+			
 			if (onJobPosted) onJobPosted(result);
 			if (onSave) onSave(result);
->>>>>>> 455e087f68c32471ff236bdee3f0c1da9d933fb6
 			onClose();
 		} catch (error: any) {
 			toast({
