@@ -8,12 +8,14 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import JobCard from './JobCard';
 import JobDetails from './JobDetails';
 import JobFilters from './JobFilters';
 import JobPostingForm from './JobPostingForm';
 import { getJobs, ApiJob } from '@/services/jobService';
 import { Job } from '@/hooks/useJobs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 // Extended Job interface for the jobs page that matches JobCard expectations
 interface ExtendedJob {
@@ -34,6 +36,7 @@ interface ExtendedJob {
     duration: string;
     remote_work?: boolean;
     experience_level?: string;
+    skills?: string[];
 }
 
 const JobListingsPage: React.FC = () => {
@@ -42,11 +45,35 @@ const JobListingsPage: React.FC = () => {
     const [selectedJob, setSelectedJob] = useState<ExtendedJob | null>(null);
     const [showJobDetails, setShowJobDetails] = useState(false);
     const [showJobPostingForm, setShowJobPostingForm] = useState(false);
+      const [showFiltersModal, setShowFiltersModal] = useState(false);
+    const [showSkillsModal, setShowSkillsModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [sortBy, setSortBy] = useState('recent');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  
+  // Popular skills for the skills filter modal
+  const popularSkills = [
+      'React', 'JavaScript', 'Python', 'Node.js', 'TypeScript',
+      'Java', 'C#', 'C++', 'Go', 'Ruby', 'PHP', 'Swift',
+      'Kotlin', 'Rust', 'SQL', 'MongoDB', 'AWS', 'Azure',
+      'Docker', 'Kubernetes', 'GraphQL', 'REST API', 'Git',
+      'Machine Learning', 'Data Science', 'DevOps'
+  ];
+    const [filterOptions, setFilterOptions] = useState({
+        search: '',
+        location: '',
+        jobType: '',
+        salaryRange: [0, 200000] as [number, number],
+        experienceLevel: '',
+        remoteWork: false,
+        benefits: [] as string[],
+        skills: [] as string[],
+        companySize: '',
+        industry: ''
+    });
     
     // Get real user ID from auth context
     const { userId } = useAuth();
@@ -75,6 +102,26 @@ const JobListingsPage: React.FC = () => {
                         }
                     }
                     
+                    // Get skills from the API response or extract from description as fallback
+                    const skills = [];
+                    
+                    // Use skills from API if available
+                    if (apiJob.skills && apiJob.skills.length > 0) {
+                        apiJob.skills.forEach(skill => {
+                            skills.push(skill.name);
+                        });
+                    } else {
+                        // Fallback: Extract skills from job description
+                        const popularSkills = ['React', 'JavaScript', 'Python', 'Node.js', 'TypeScript', 'AWS', 'Docker', 'Kubernetes', 'Machine Learning', 'UI/UX Design'];
+                        
+                        // Check if any popular skills are mentioned in the job description
+                        popularSkills.forEach(skill => {
+                            if (apiJob.description && apiJob.description.toLowerCase().includes(skill.toLowerCase())) {
+                                skills.push(skill);
+                            }
+                        });
+                    }
+                    
                     return {
                         id: apiJob.id.toString(),
                         title: apiJob.title,
@@ -86,13 +133,14 @@ const JobListingsPage: React.FC = () => {
                         applications: apiJob.applications || 0,
                         postedDate: apiJob.postedDate || apiJob.created_at,
                         description: apiJob.description,
-                        requirements: ['Skills matching your profile'],
+                        requirements: skills.length > 0 ? skills : ['Skills matching your profile'],
                         benefits: ['Competitive benefits'],
                         deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
                         employerId: '1',
                         duration: 'Permanent',
                         remote_work: true,
-                        experience_level: 'Mid-level'
+                        experience_level: 'Mid-level',
+                        skills: skills
                     };
                 });
                 console.log('Transformed jobs:', transformedJobs); // Debug log
@@ -157,6 +205,15 @@ const JobListingsPage: React.FC = () => {
         }
     }, [newJobs]);
 
+    // Synchronize search and category with filterOptions
+    useEffect(() => {
+        setFilterOptions(prev => ({
+            ...prev,
+            search: searchTerm,
+            jobType: selectedCategory === 'all' ? '' : selectedCategory
+        }));
+    }, [searchTerm, selectedCategory]);
+
     // Filter and sort jobs
     useEffect(() => {
         let filtered = jobs;
@@ -176,6 +233,54 @@ const JobListingsPage: React.FC = () => {
             filtered = filtered.filter(job => job.type === selectedCategory);
         }
 
+        // Apply skills filter
+        if (filterOptions.skills.length > 0) {
+            filtered = filtered.filter(job => {
+                // First check if job has skills array from API
+                if (job.skills && job.skills.length > 0) {
+                    return filterOptions.skills.some(selectedSkill => 
+                        job.skills!.some(jobSkill => 
+                            jobSkill.toLowerCase() === selectedSkill.toLowerCase()
+                        )
+                    );
+                }
+                
+                // Fallback to checking requirements and description
+                return filterOptions.skills.some(skill => 
+                    job.requirements.some(req => 
+                        req.toLowerCase().includes(skill.toLowerCase())
+                    ) ||
+                    job.description.toLowerCase().includes(skill.toLowerCase())
+                );
+            });
+        }
+
+        // Apply location filter
+        if (filterOptions.location) {
+            filtered = filtered.filter(job =>
+                job.location.toLowerCase().includes(filterOptions.location.toLowerCase())
+            );
+        }
+
+        // Apply job type filter
+        if (filterOptions.jobType) {
+            filtered = filtered.filter(job =>
+                job.type.toLowerCase().includes(filterOptions.jobType.toLowerCase())
+            );
+        }
+
+        // Apply experience level filter
+        if (filterOptions.experienceLevel) {
+            filtered = filtered.filter(job =>
+                job.experience_level?.toLowerCase().includes(filterOptions.experienceLevel.toLowerCase())
+            );
+        }
+
+        // Apply remote work filter
+        if (filterOptions.remoteWork) {
+            filtered = filtered.filter(job => job.remote_work === true);
+        }
+
         // Apply sorting
         filtered.sort((a, b) => {
             switch (sortBy) {
@@ -193,7 +298,7 @@ const JobListingsPage: React.FC = () => {
         });
 
         setFilteredJobs(filtered);
-    }, [jobs, searchTerm, selectedCategory, sortBy]);
+    }, [jobs, searchTerm, selectedCategory, sortBy, filterOptions]);
 
     const handleJobClick = (job: ExtendedJob) => {
         setSelectedJob(job);
@@ -231,6 +336,18 @@ const JobListingsPage: React.FC = () => {
             }
         }
         
+        // Extract skills from the new job
+        const skills: string[] = [];
+        if (newJob.skills && newJob.skills.length > 0) {
+            // If skills are provided as objects with name property
+            if (typeof newJob.skills[0] === 'object' && newJob.skills[0].name) {
+                newJob.skills.forEach((skill: any) => skills.push(skill.name));
+            } else {
+                // If skills are provided as strings
+                skills.push(...newJob.skills);
+            }
+        }
+        
         // Add the new job to the jobs list
         const extendedJob: ExtendedJob = {
             id: newJob.id.toString(),
@@ -249,7 +366,8 @@ const JobListingsPage: React.FC = () => {
             employerId: '1',
             duration: 'Permanent',
             remote_work: newJob.remote_work || false,
-            experience_level: newJob.experience_level || 'Mid-level'
+            experience_level: newJob.experience_level || 'Mid-level',
+            skills: skills.length > 0 ? skills : undefined
         };
         
         setJobs(prevJobs => [extendedJob, ...prevJobs]);
@@ -282,6 +400,10 @@ const JobListingsPage: React.FC = () => {
                 </div>
             </div>
         );
+    }
+
+    function handleSkillToggle(skill: string): void {
+        throw new Error('Function not implemented.');
     }
 
     return (
@@ -379,10 +501,33 @@ const JobListingsPage: React.FC = () => {
                             </SelectContent>
                         </Select>
 
-                        <Button variant="outline" className="flex items-center space-x-2">
-                            <Filter className="h-4 w-4" />
-                            <span>More Filters</span>
-                        </Button>
+                        <div className="flex space-x-2">
+                            <Button 
+                                variant="outline" 
+                                className="flex items-center space-x-2"
+                                onClick={() => {
+                                    // Create a simplified modal for skills only
+                                    setShowSkillsModal(true);
+                                }}
+                            >
+                                <Filter className="h-4 w-4" />
+                                <span>Skills Filter</span>
+                                {selectedSkills.length > 0 && (
+                                    <Badge className="ml-2 bg-blue-100 text-blue-800">
+                                        {selectedSkills.length}
+                                    </Badge>
+                                )}
+                            </Button>
+                            
+                            <Button 
+                                variant="outline" 
+                                className="flex items-center space-x-2"
+                                onClick={() => setShowFiltersModal(true)}
+                            >
+                                <Filter className="h-4 w-4" />
+                                <span>More Filters</span>
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Results Count */}
@@ -396,6 +541,40 @@ const JobListingsPage: React.FC = () => {
                             </Badge>
                         )}
                     </div>
+
+                    {/* Active Filters */}
+                    {filterOptions.skills.length > 0 && (
+                        <div className="mb-4">
+                            <p className="text-sm font-medium text-gray-700 mb-2">Active Skill Filters:</p>
+                            <div className="flex flex-wrap gap-2">
+                                {filterOptions.skills.map(skill => (
+                                    <Badge key={skill} variant="secondary" className="flex items-center space-x-1">
+                                        <span>{skill}</span>
+                                        <X 
+                                            className="w-3 h-3 ml-1 cursor-pointer" 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setFilterOptions(prev => ({
+                                                    ...prev,
+                                                    skills: prev.skills.filter(s => s !== skill)
+                                                }));
+                                            }}
+                                        />
+                                    </Badge>
+                                ))}
+                                {filterOptions.skills.length > 0 && (
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="h-6 text-xs"
+                                        onClick={() => setFilterOptions(prev => ({ ...prev, skills: [] }))}
+                                    >
+                                        Clear All
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Jobs Grid */}
@@ -481,6 +660,119 @@ const JobListingsPage: React.FC = () => {
                     onJobPosted={handleJobPosted}
                 />
             )}
+
+            {/* Filters Modal */}
+            <Dialog open={showFiltersModal} onOpenChange={setShowFiltersModal}>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Filter Jobs</DialogTitle>
+                    </DialogHeader>
+                    <JobFilters 
+                        filters={filterOptions}
+                        onFiltersChange={(newFilters) => {
+                            setFilterOptions(newFilters);
+                            // Update searchTerm and selectedCategory to match the filters
+                            setSearchTerm(newFilters.search);
+                            setSelectedCategory(newFilters.jobType === '' ? 'all' : newFilters.jobType);
+                        }}
+                        onClearFilters={() => {
+                            setFilterOptions({
+                                search: '',
+                                location: '',
+                                jobType: '',
+                                salaryRange: [0, 200000],
+                                experienceLevel: '',
+                                remoteWork: false,
+                                benefits: [],
+                                skills: [],
+                                companySize: '',
+                                industry: ''
+                            });
+                            setSearchTerm('');
+                            setSelectedCategory('all');
+                        }}
+                        totalJobs={jobs.length}
+                        filteredJobs={filteredJobs.length}
+                    />
+                </DialogContent>
+            </Dialog>
+
+            {/* Skills Filter Modal */}
+            <Dialog open={showSkillsModal} onOpenChange={setShowSkillsModal}>
+                <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Skills Filter</DialogTitle>
+                    </DialogHeader>
+                    <div className="p-4">
+                        <div className="mb-4">
+                            <h3 className="text-lg font-medium mb-2">Select Skills</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                {[
+                                    'React', 'JavaScript', 'Python', 'Node.js', 'TypeScript',
+                                    'AWS', 'Docker', 'Kubernetes', 'Machine Learning', 'UI/UX Design'
+                                ].map(skill => (
+                                    <div key={skill} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={`skill-${skill}`}
+                                            checked={filterOptions.skills.includes(skill)}
+                                            onCheckedChange={() => {
+                                                const newSkills = filterOptions.skills.includes(skill)
+                                                    ? filterOptions.skills.filter(s => s !== skill)
+                                                    : [...filterOptions.skills, skill];
+                                                
+                                                setFilterOptions(prev => ({
+                                                    ...prev,
+                                                    skills: newSkills
+                                                }));
+                                            }}
+                                        />
+                                        <label
+                                            htmlFor={`skill-${skill}`}
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                        >
+                                            {skill}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {selectedSkills.length > 0 && (
+                             <div className="mb-4">
+                                 <h3 className="text-lg font-medium mb-2">Selected Skills</h3>
+                                 <div className="flex flex-wrap gap-2">
+                                     {selectedSkills.map(skill => (
+                                         <Badge
+                                             key={skill}
+                                             variant="secondary"
+                                             className="flex items-center gap-1"
+                                         >
+                                             {skill}
+                                             <X
+                                                 className="h-3 w-3 cursor-pointer"
+                                                 onClick={() => handleSkillToggle(skill)}
+                                             />
+                                         </Badge>
+                                     ))}
+                                 </div>
+                             </div>
+                         )}
+
+                        <div className="flex justify-between mt-4">
+                             <Button
+                                 variant="outline"
+                                 onClick={() => setSelectedSkills([])}
+                                 disabled={selectedSkills.length === 0}
+                             >
+                                 Clear Skills
+                             </Button>
+                             <Button onClick={() => setShowSkillsModal(false)}>
+                                 Apply Filters
+                             </Button>
+                         </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

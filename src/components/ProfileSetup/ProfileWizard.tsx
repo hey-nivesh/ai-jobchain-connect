@@ -97,7 +97,7 @@ const ProfileWizard: React.FC = () => {
       
       // Get extracted skills
       const skills = await userService.getExtractedSkills(userId);
-      setExtractedSkills(skills);
+      setExtractedSkills(skills as any[]);
       
       await updateProfileData('resume', file);
       

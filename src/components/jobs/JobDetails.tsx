@@ -38,6 +38,9 @@ interface Job {
   status: 'active' | 'closed' | 'draft';
   employerId: string;
   duration: string;
+  remote_work?: boolean;
+  experience_level?: string;
+  skills?: string[];
 }
 
 interface JobDetailsProps {
@@ -192,6 +195,24 @@ const JobDetails: React.FC<JobDetailsProps> = ({
           </p>
         </CardContent>
       </Card>
+
+      {/* Skills */}
+      {job.skills && job.skills.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-xl">Required Skills</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {job.skills.map((skill, index) => (
+                <Badge key={index} variant="outline" className="bg-primary/10 text-primary border-primary/20 text-sm py-1 px-3">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Requirements */}
       <Card className="mb-6">

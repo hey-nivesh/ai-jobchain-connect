@@ -8,6 +8,12 @@ export interface CreateJobPayload {
 	salary?: string;
 	job_type?: string;
 	status?: string;
+	skill_ids?: number[];
+}
+
+export interface Skill {
+	id: number;
+	name: string;
 }
 
 export interface ApiJob {
@@ -19,6 +25,7 @@ export interface ApiJob {
 	salary?: string | null;
 	type?: string | null;
 	status?: string | null;
+	skills?: Skill[];
 	applications?: number;
 	postedDate?: string;
 	created_at: string;
@@ -32,5 +39,15 @@ export const getJobs = async (): Promise<ApiJob[]> => {
 
 export const createJob = async (payload: CreateJobPayload): Promise<ApiJob> => {
 	const res = await apiClient.post<ApiJob>('/jobs/', payload);
+	return res.data;
+};
+
+export const getSkills = async (): Promise<Skill[]> => {
+	const res = await apiClient.get<Skill[]>('/skills/');
+	return res.data;
+};
+
+export const createSkill = async (name: string): Promise<Skill> => {
+	const res = await apiClient.post<Skill>('/skills/', { name });
 	return res.data;
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,9 +6,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { X, Plus, Briefcase, MapPin, DollarSign, Clock, Users, Building2 } from 'lucide-react';
+import { X, Plus, Briefcase, MapPin, DollarSign, Clock, Users, Building2, Tag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { createJob } from '@/services/jobService';
+import { createJob, getSkills, createSkill, Skill } from '@/services/jobService';
 
 interface JobPostingFormProps {
 	onClose: () => void;
@@ -23,6 +23,7 @@ interface JobFormData {
 	salary: string;
 	job_type: string;
 	status: string;
+	skill_ids: number[];
 }
 
 const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted }) => {
@@ -34,16 +35,72 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted })
 		salary: '',
 		job_type: 'FULL_TIME',
 		status: 'active',
+		skill_ids: [],
 	});
+	
+	const [skills, setSkills] = useState<Skill[]>([]);
+	const [selectedSkills, setSelectedSkills] = useState<Skill[]>([]);
+	const [newSkill, setNewSkill] = useState('');
 
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [isLoadingSkills, setIsLoadingSkills] = useState(false);
 	const { toast } = useToast();
+	
+	useEffect(() => {
+		const fetchSkills = async () => {
+			setIsLoadingSkills(true);
+			try {
+				const skillsData = await getSkills();
+				setSkills(skillsData);
+			} catch (error) {
+				console.error('Error fetching skills:', error);
+			} finally {
+				setIsLoadingSkills(false);
+			}
+		};
+		
+		fetchSkills();
+	}, []);
 
-	const handleInputChange = (field: keyof JobFormData, value: string) => {
+	const handleInputChange = (field: keyof JobFormData, value: string | number[]) => {
 		setFormData(prev => ({
 			...prev,
 			[field]: value
 		}));
+	};
+	
+	const handleSkillSelect = async (skillId: number) => {
+		const skill = skills.find(s => s.id === skillId);
+		if (skill && !selectedSkills.some(s => s.id === skillId)) {
+			const updatedSelectedSkills = [...selectedSkills, skill];
+			setSelectedSkills(updatedSelectedSkills);
+			handleInputChange('skill_ids', updatedSelectedSkills.map(s => s.id));
+		}
+	};
+	
+	const handleRemoveSkill = (skillId: number) => {
+		const updatedSelectedSkills = selectedSkills.filter(s => s.id !== skillId);
+		setSelectedSkills(updatedSelectedSkills);
+		handleInputChange('skill_ids', updatedSelectedSkills.map(s => s.id));
+	};
+	
+	const handleAddNewSkill = async () => {
+		if (!newSkill.trim()) return;
+		
+		try {
+			const createdSkill = await createSkill(newSkill.trim());
+			setSkills(prev => [...prev, createdSkill]);
+			setSelectedSkills(prev => [...prev, createdSkill]);
+			handleInputChange('skill_ids', [...selectedSkills, createdSkill].map(s => s.id));
+			setNewSkill('');
+		} catch (error) {
+			console.error('Error creating skill:', error);
+			toast({
+				title: "Error Adding Skill",
+				description: "Failed to add the new skill. Please try again.",
+				variant: "destructive"
+			});
+		}
 	};
 
 	const validateForm = (): boolean => {
@@ -71,6 +128,7 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted })
 				salary: formData.salary,
 				job_type: formData.job_type,
 				status: formData.status,
+				skill_ids: formData.skill_ids,
 			});
 			onJobPosted(newJob);
 			toast({
@@ -205,6 +263,76 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted })
 											rows={6}
 											required
 										/>
+									</CardContent>
+								</Card>
+
+								<Card>
+									<CardHeader>
+										<CardTitle className="flex items-center space-x-2">
+											<Tag className="h-5 w-5" />
+											<span>Skills</span>
+										</CardTitle>
+									</CardHeader>
+									<CardContent>
+										<div className="space-y-4">
+											<div className="flex items-center space-x-2">
+												<Input
+													value={newSkill}
+													onChange={(e) => setNewSkill(e.target.value)}
+													placeholder="Add a new skill..."
+													className="flex-1"
+												/>
+												<Button 
+													type="button" 
+													onClick={handleAddNewSkill}
+													disabled={!newSkill.trim()}
+													size="sm"
+												>
+													<Plus className="h-4 w-4 mr-1" /> Add
+												</Button>
+											</div>
+
+											<div className="flex flex-wrap gap-2 mt-2">
+												{selectedSkills.map(skill => (
+													<Badge key={skill.id} variant="secondary" className="flex items-center space-x-1">
+														<span>{skill.name}</span>
+														<Button
+															type="button"
+															variant="ghost"
+															size="sm"
+															className="h-4 w-4 p-0 hover:bg-transparent"
+															onClick={() => handleRemoveSkill(skill.id)}
+														>
+															<X className="h-3 w-3" />
+														</Button>
+													</Badge>
+												))}
+											</div>
+
+											{skills.length > 0 && (
+												<div className="mt-4">
+													<Label>Popular Skills</Label>
+													<div className="flex flex-wrap gap-2 mt-2">
+														{skills
+															.filter(skill => !selectedSkills.some(s => s.id === skill.id))
+															.slice(0, 10)
+															.map(skill => (
+																<Badge 
+																	key={skill.id} 
+																	variant="outline" 
+																	className="cursor-pointer hover:bg-secondary"
+																	onClick={() => handleSkillSelect(skill.id)}
+																>
+																	{skill.name}
+																</Badge>
+															))
+														}
+													</div>
+												</div>
+											)}
+
+											{isLoadingSkills && <div className="text-sm text-muted-foreground">Loading skills...</div>}
+										</div>
 									</CardContent>
 								</Card>
 							</CardContent>
