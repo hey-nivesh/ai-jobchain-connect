@@ -30,12 +30,13 @@ interface Job {
   description: string;
   requirements: string[];
   benefits: string[];
-  postedDate: string;
+  created_at: string;
   deadline: string;
   applications: number;
   status: 'active' | 'closed' | 'draft';
   employerId: string;
   duration: string;
+  skills?: string[];
 }
 
 interface JobDetailsProps {

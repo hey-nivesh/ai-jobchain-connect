@@ -22,6 +22,8 @@ interface RawJob {
 
 // Processed job with all required fields
 export interface Job {
+    type: ReactNode;
+    skills: any;
     id: string;
     title: string;
     company: string;

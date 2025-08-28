@@ -17,6 +17,7 @@ export interface Skill {
 }
 
 export interface ApiJob {
+    type: string;
 	id: number;
 	title: string;
 	company: string;

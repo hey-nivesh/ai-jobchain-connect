@@ -6,18 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-<<<<<<< HEAD
 import { Checkbox } from '@/components/ui/checkbox';
-=======
-import { useAIRecommendations } from '../../hooks/useAIRecommendations';
->>>>>>> 455e087f68c32471ff236bdee3f0c1da9d933fb6
 import JobCard from './JobCard';
 import JobDetails from './JobDetails';
 import JobPostingForm from './JobPostingForm';
-<<<<<<< HEAD
 import { getJobs, ApiJob } from '@/services/jobService';
-import { Job } from '@/hooks/useJobs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import JobFilters from './JobFilters';
 
 // Extended Job interface for the jobs page that matches JobCard expectations
 interface ExtendedJob {
@@ -30,19 +25,17 @@ interface ExtendedJob {
     description: string;
     requirements: string[];
     benefits: string[];
-    postedDate: string;
+    created_at: string;
     deadline: string;
     applications: number;
     status: 'active' | 'closed' | 'draft';
-    employerId: string;
+    employer_name: string;
     duration: string;
     remote_work?: boolean;
     experience_level?: string;
     skills?: string[];
+    job_type?: string;
 }
-=======
-import { getJobs } from '@/services/jobService';
->>>>>>> 455e087f68c32471ff236bdee3f0c1da9d933fb6
 
 const JobListingsPage: React.FC = () => {
     const [jobs, setJobs] = useState<Job[]>([]);
@@ -50,10 +43,10 @@ const JobListingsPage: React.FC = () => {
     const [selectedJob, setSelectedJob] = useState<Job | null>(null);
     const [showJobDetails, setShowJobDetails] = useState(false);
     const [showJobPostingForm, setShowJobPostingForm] = useState(false);
-      const [showFiltersModal, setShowFiltersModal] = useState(false);
+    const [showFiltersModal, setShowFiltersModal] = useState(false);
     const [showSkillsModal, setShowSkillsModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-        const [selectedCategory, setSelectedCategory] = useState('all');    
+    const [selectedCategory, setSelectedCategory] = useState('all');
     const [sortBy, setSortBy] = useState('recent');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -89,75 +82,65 @@ const JobListingsPage: React.FC = () => {
             try {
                 setLoading(true);
                 const apiJobs = await getJobs();
-<<<<<<< HEAD
                 console.log('Raw API jobs data:', apiJobs); // Debug log
-                const transformedJobs: ExtendedJob[] = apiJobs.map(apiJob => {
-                    // Use actual salary from API, only fallback if truly empty
-                    let salary = apiJob.salary;
-                    if (!salary || salary.trim() === '') {
-                        // Only provide fallback if salary is actually empty
-                        if (apiJob.title.toLowerCase().includes('senior') || apiJob.title.toLowerCase().includes('lead')) {
-                            salary = '$120,000 - $150,000';
-                        } else if (apiJob.title.toLowerCase().includes('junior') || apiJob.title.toLowerCase().includes('entry')) {
-                            salary = '$60,000 - $80,000';
-                        } else if (apiJob.title.toLowerCase().includes('developer') || apiJob.title.toLowerCase().includes('engineer')) {
-                            salary = '$90,000 - $120,000';
-                        } else {
-                            salary = '$80,000 - $100,000';
-                        }
-                    }
-                    
-                    // Get skills from the API response or extract from description as fallback
-                    const skills = [];
-                    
-                    // Use skills from API if available
-                    if (apiJob.skills && apiJob.skills.length > 0) {
-                        apiJob.skills.forEach(skill => {
-                            skills.push(skill.name);
-                        });
-                    } else {
-                        // Fallback: Extract skills from job description
-                        const popularSkills = ['React', 'JavaScript', 'Python', 'Node.js', 'TypeScript', 'AWS', 'Docker', 'Kubernetes', 'Machine Learning', 'UI/UX Design'];
-                        
-                        // Check if any popular skills are mentioned in the job description
-                        popularSkills.forEach(skill => {
-                            if (apiJob.description && apiJob.description.toLowerCase().includes(skill.toLowerCase())) {
-                                skills.push(skill);
+                console.log('Transformed jobs:', apiJobs.map(apiJob => {
+                        // Use actual salary from API, only fallback if truly empty
+                        let salary = apiJob.salary;
+                        if (!salary || salary.trim() === '') {
+                            // Only provide fallback if salary is actually empty
+                            if (apiJob.title.toLowerCase().includes('senior') || apiJob.title.toLowerCase().includes('lead')) {
+                                salary = '$120,000 - $150,000';
+                            } else if (apiJob.title.toLowerCase().includes('junior') || apiJob.title.toLowerCase().includes('entry')) {
+                                salary = '$60,000 - $80,000';
+                            } else if (apiJob.title.toLowerCase().includes('developer') || apiJob.title.toLowerCase().includes('engineer')) {
+                                salary = '$90,000 - $120,000';
+                            } else {
+                                salary = '$80,000 - $100,000';
                             }
-                        });
-                    }
-                    
-                    return {
-                        id: apiJob.id.toString(),
-                        title: apiJob.title,
-                        company: apiJob.company || 'Unknown Company',
-                        location: apiJob.location || 'Remote',
-                        salary: salary,
-                        type: apiJob.type || 'FULL_TIME',
-                        status: (apiJob.status as 'active' | 'closed' | 'draft') || 'active',
-                        applications: apiJob.applications || 0,
-                        postedDate: apiJob.postedDate || apiJob.created_at,
-                        description: apiJob.description,
-                        requirements: skills.length > 0 ? skills : ['Skills matching your profile'],
-                        benefits: ['Competitive benefits'],
-                        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-                        employerId: '1',
-                        duration: 'Permanent',
-                        remote_work: true,
-                        experience_level: 'Mid-level',
-                        skills: skills
-                    };
-                });
-                console.log('Transformed jobs:', transformedJobs); // Debug log
-=======
-                console.log('Raw API jobs data:', apiJobs);
-                
-                // Transform API jobs using the same transformer from useWebSocket
-                const transformedJobs = apiJobs.map(job => transformedJobs(job));
+                        }
 
-                console.log('Transformed jobs:', transformedJobs);
->>>>>>> 455e087f68c32471ff236bdee3f0c1da9d933fb6
-                setJobs(transformedJobs);
+                        // Get skills from the API response or extract from description as fallback
+                        const skills = [];
+
+                        // Use skills from API if available
+                        if (apiJob.skills && apiJob.skills.length > 0) {
+                            apiJob.skills.forEach(skill => {
+                                skills.push(skill.name);
+                            });
+                        } else {
+                            // Fallback: Extract skills from job description
+                            const popularSkills = ['React', 'JavaScript', 'Python', 'Node.js', 'TypeScript', 'AWS', 'Docker', 'Kubernetes', 'Machine Learning', 'UI/UX Design'];
+
+                            // Check if any popular skills are mentioned in the job description
+                            popularSkills.forEach(skill => {
+                                if (apiJob.description && apiJob.description.toLowerCase().includes(skill.toLowerCase())) {
+                                    skills.push(skill);
+                                }
+                            });
+                        }
+
+                        return {
+                            id: apiJob.id.toString(),
+                            title: apiJob.title,
+                            company: apiJob.company || 'Unknown Company',
+                            location: apiJob.location || 'Remote',
+                            salary: salary,
+                            type: apiJob.type || 'FULL_TIME',
+                            status: (apiJob.status as 'active' | 'closed' | 'draft') || 'active',
+                            applications: apiJob.applications || 0,
+                            postedDate: apiJob.posted_date || apiJob.created_at,
+                            description: apiJob.description,
+                            requirements: skills.length > 0 ? skills : ['Skills matching your profile'],
+                            benefits: ['Competitive benefits'],
+                            deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+                            employerId: '1',
+                            duration: 'Permanent',
+                            remote_work: true,
+                            experience_level: 'Mid-level',
+                            skills: skills
+                        };
+                    })); // Debug log
+                newFunction(setJobs, apiJobs);
                 // No need to set filteredJobs here as it's handled by the filter/sort effect
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to fetch jobs');
@@ -182,13 +165,16 @@ const JobListingsPage: React.FC = () => {
         }
     }, [newJobs]);
 
-    // Synchronize search and category with filterOptions
+    // Synchronize search, category, and selectedSkills with filterOptions
     useEffect(() => {
         setFilterOptions(prev => ({
             ...prev,
             search: searchTerm,
             jobType: selectedCategory === 'all' ? '' : selectedCategory
         }));
+        
+        // Keep selectedSkills in sync with filterOptions.skills
+        setSelectedSkills(filterOptions.skills);
     }, [searchTerm, selectedCategory]);
 
     // Filter and sort jobs
@@ -301,7 +287,6 @@ const JobListingsPage: React.FC = () => {
         alert(`Application form for ${jobs.find(j => j.id === jobId)?.title} will open here`);
     };
 
-<<<<<<< HEAD
     const handleJobPosted = (newJob: any) => {
         // Handle salary field more gracefully
         let salary = newJob.salary;
@@ -332,12 +317,6 @@ const JobListingsPage: React.FC = () => {
         
         // Add the new job to the jobs list
         const extendedJob: ExtendedJob = {
-=======
-    const handleJobPosted = (newJob: Job) => {
-        // Use the same transformation logic as in useWebSocket
-        const transformedJob: Job = {
-            ...newJob,
->>>>>>> 455e087f68c32471ff236bdee3f0c1da9d933fb6
             id: newJob.id.toString(),
             company: newJob.company || 'Unknown Company',
             location: newJob.location || 'Remote',
@@ -352,24 +331,20 @@ const JobListingsPage: React.FC = () => {
             benefits: ['Competitive benefits'],
             deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             duration: 'Permanent',
-<<<<<<< HEAD
             remote_work: newJob.remote_work || false,
             experience_level: newJob.experience_level || 'Mid-level',
-            skills: skills.length > 0 ? skills : undefined
-=======
-            remote_work: true,
-            experience_level: 'Mid-level',
-            match_score: undefined,
-            reasons_for_match: undefined,
-            featured: false
->>>>>>> 455e087f68c32471ff236bdee3f0c1da9d933fb6
+            skills: skills.length > 0 ? skills : undefined,
+            title: '',
+            type: ''
         };
-        setJobs(prevJobs => [transformedJob, ...prevJobs]);
+        setJobs((prevJobs): (Job | ExtendedJob)[] => [extendedJob, ...prevJobs]);
     };
 
-    const { 
-        fetchRecommendations 
-    } = useAIRecommendations();
+    // Mock AI recommendations functionality
+    const fetchRecommendations = (skills: string[], filters: any) => {
+        console.log('Fetching recommendations for skills:', skills, 'with filters:', filters);
+        // In a real implementation, this would call an API
+    };
 
     // Add state to switch between views
     const [activeTab, setActiveTab] = useState<'all' | 'recommended'>('all');
@@ -407,7 +382,19 @@ const JobListingsPage: React.FC = () => {
     }
 
     function handleSkillToggle(skill: string): void {
-        throw new Error('Function not implemented.');
+        setSelectedSkills(prev => 
+            prev.includes(skill)
+                ? prev.filter(s => s !== skill)
+                : [...prev, skill]
+        );
+        
+        // Also update filterOptions to keep them in sync
+        setFilterOptions(prev => ({
+            ...prev,
+            skills: prev.skills.includes(skill)
+                ? prev.skills.filter(s => s !== skill)
+                : [...prev.skills, skill]
+        }));
     }
 
     return (
@@ -420,7 +407,6 @@ const JobListingsPage: React.FC = () => {
             </div>
 
 
-<<<<<<< HEAD
             {/* Main Content */}
             <div className="container mx-auto px-4 py-8">
                 {/* Header */}
@@ -561,70 +547,82 @@ const JobListingsPage: React.FC = () => {
                     {filteredJobs.map((job, index) => (
                         <div 
                             key={job.id}
-                            className={`bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow cursor-pointer ${
-                                index < newJobs.length ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-                            }`}
-                            onClick={() => handleJobClick(job)}
+                            className={`${index < newJobs.length ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
                         >
                             {index < newJobs.length && (
-                                <div className="p-4 pb-0">
-                                    <Badge className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full flex items-center w-fit">
-                                        <Zap className="h-3 w-3 mr-1" />
-                                        New Match
-                                    </Badge>
-=======
-                    {/* New Jobs Alert */}
-                    {newJobs.length > 0 && (
-                        <div className="fixed top-16 right-4 bg-blue-500 text-white p-4 rounded-lg shadow-lg z-40 max-w-sm">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center">
-                                    <Zap className="h-4 w-4 mr-2" />
-                                    <span className="font-semibold">New Job Matches!</span>
->>>>>>> 455e087f68c32471ff236bdee3f0c1da9d933fb6
+                                <div className="p-4 pb-0 flex justify-between items-start">
+                                    <div>
+                                        <Badge className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full flex items-center w-fit">
+                                            <Zap className="h-3 w-3 mr-1" />
+                                            New Match
+                                        </Badge>
+                                        <p className="text-sm mt-1">
+                                            {newJobs.length} new job{newJobs.length > 1 ? 's' : ''} match your profile
+                                        </p>
+                                    </div>
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            clearNewJobs();
+                                        }}
+                                        className="text-gray-500 hover:text-gray-700"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
                                 </div>
-                                <button 
-                                    onClick={clearNewJobs}
-                                    className="text-white hover:text-gray-200"
-                                >
-                                    <X className="h-4 w-4" />
-                                </button>
-                            </div>
-                            <p className="text-sm">
-                                {newJobs.length} new job{newJobs.length > 1 ? 's' : ''} match your profile
-                            </p>
+                            )}
+                            <JobCard 
+                                job={job}
+                                onViewDetails={handleJobClick}
+                                onApply={handleApplyToJob}
+                                onSave={(id) => console.log(`Saving job ${id}`)}
+                                showActions={true}
+                            />
                         </div>
-                    )}
+                    ))}
+                </div>
 
-                    {/* Main Content */}
-                    <div className="container mx-auto px-4 py-8">
-                        {/* Header */}
-                        <div className="mb-8">
-                            <div className="flex items-center justify-between mb-6">
-                                <div>
-                                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                                        Find Your Dream Job
-                                    </h1>
-                                    <p className="text-gray-600">
-                                        Discover opportunities that match your skills and preferences
-                                    </p>
-                                </div>
-                                <Button 
-                                    className="flex items-center space-x-2"
-                                    onClick={() => setShowJobPostingForm(true)}
-                                >
-                                    <Plus className="h-4 w-4" />
-                                    <span>Post a Job</span>
-                                </Button>
-                            </div>
+                {/* No jobs found message */}
+                {filteredJobs.length === 0 && (
+                    <div className="text-center py-10">
+                        <p className="text-gray-500">No jobs match your current filters.</p>
+                        <Button 
+                            variant="outline" 
+                            className="mt-4"
+                            onClick={() => {
+                                setFilterOptions({
+                                    search: '',
+                                    location: '',
+                                    jobType: '',
+                                    salaryRange: [0, 200000],
+                                    experienceLevel: '',
+                                    remoteWork: false,
+                                    benefits: [],
+                                    skills: [],
+                                    companySize: '',
+                                    industry: ''
+                                });
+                                setSearchTerm('');
+                                setSelectedCategory('all');
+                            }}
+                        >
+                            Clear Filters
+                        </Button>
+                    </div>
+                )}
 
-<<<<<<< HEAD
             {/* Job Posting Form Modal */}
-            {showJobPostingForm && (
-                <JobPostingForm
-                    onClose={() => setShowJobPostingForm(false)}
-                    onJobPosted={handleJobPosted}
-                />
-            )}
+            <Dialog open={showJobPostingForm} onOpenChange={setShowJobPostingForm}>
+                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Post a New Job</DialogTitle>
+                    </DialogHeader>
+                    <JobPostingForm
+                        onClose={() => setShowJobPostingForm(false)}
+                        onJobPosted={handleJobPosted}
+                    />
+                </DialogContent>
+            </Dialog>
 
             {/* Filters Modal */}
             <Dialog open={showFiltersModal} onOpenChange={setShowFiltersModal}>
@@ -702,11 +700,11 @@ const JobListingsPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {selectedSkills.length > 0 && (
+                        {filterOptions.skills.length > 0 && (
                              <div className="mb-4">
                                  <h3 className="text-lg font-medium mb-2">Selected Skills</h3>
                                  <div className="flex flex-wrap gap-2">
-                                     {selectedSkills.map(skill => (
+                                     {filterOptions.skills.map(skill => (
                                          <Badge
                                              key={skill}
                                              variant="secondary"
@@ -715,7 +713,13 @@ const JobListingsPage: React.FC = () => {
                                              {skill}
                                              <X
                                                  className="h-3 w-3 cursor-pointer"
-                                                 onClick={() => handleSkillToggle(skill)}
+                                                 onClick={() => {
+                                                     const newSkills = filterOptions.skills.filter(s => s !== skill);
+                                                     setFilterOptions(prev => ({
+                                                         ...prev,
+                                                         skills: newSkills
+                                                     }));
+                                                 }}
                                              />
                                          </Badge>
                                      ))}
@@ -726,8 +730,8 @@ const JobListingsPage: React.FC = () => {
                         <div className="flex justify-between mt-4">
                              <Button
                                  variant="outline"
-                                 onClick={() => setSelectedSkills([])}
-                                 disabled={selectedSkills.length === 0}
+                                 onClick={() => setFilterOptions(prev => ({ ...prev, skills: [] }))}
+                                 disabled={filterOptions.skills.length === 0}
                              >
                                  Clear Skills
                              </Button>
@@ -738,153 +742,72 @@ const JobListingsPage: React.FC = () => {
                     </div>
                 </DialogContent>
             </Dialog>
+            </div>
         </div>
     );
-=======
-                            {/* Search and Filters */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                                    <Input
-                                        placeholder="Search jobs..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="pl-10"
-                                    />
-                                </div>
-                                
-                                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Job Type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Types</SelectItem>
-                                        <SelectItem value="FULL_TIME">Full Time</SelectItem>
-                                        <SelectItem value="PART_TIME">Part Time</SelectItem>
-                                        <SelectItem value="CONTRACT">Contract</SelectItem>
-                                        <SelectItem value="INTERNSHIP">Internship</SelectItem>
-                                        <SelectItem value="FREELANCE">Freelance</SelectItem>
-                                    </SelectContent>
-                                </Select>
-
-                                <Select value={sortBy} onValueChange={setSortBy}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Sort by" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="recent">Most Recent</SelectItem>
-                                        <SelectItem value="salary">Highest Salary</SelectItem>
-                                        <SelectItem value="company">Company Name</SelectItem>
-                                    </SelectContent>
-                                </Select>
-
-                                <Button variant="outline" className="flex items-center space-x-2">
-                                    <Filter className="h-4 w-4" />
-                                    <span>More Filters</span>
-                                </Button>
-                            </div>
-
-                            {/* Results Count */}
-                            <div className="flex items-center justify-between mb-4">
-                                <p className="text-sm text-gray-600">
-                                    Showing {filteredJobs.length} of {jobs.length} jobs
-                                </p>
-                                {newJobs.length > 0 && (
-                                    <Badge className="bg-blue-100 text-blue-800">
-                                        {newJobs.length} new match{newJobs.length > 1 ? 'es' : ''}
-                                    </Badge>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Jobs Grid */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {filteredJobs.map((job, index) => (
-                                <button 
-                                    key={job.id}
-                                    type="button"
-                                    tabIndex={0}
-                                    onClick={() => handleJobClick(job)}
-                                    className={`bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow cursor-pointer ${
-                                        index < newJobs.length ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-                                    }`}
-                                >
-                                    {index < newJobs.length && (
-                                        <div className="p-4 pb-0">
-                                            <Badge className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full flex items-center w-fit">
-                                                <Zap className="h-3 w-3 mr-1" />
-                                                New Match
-                                            </Badge>
-                                        </div>
-                                    )}
-                                    
-                                    <JobCard 
-                                        job={job}
-                                        onViewDetails={handleJobClick}
-                                        onApply={handleApplyToJob}
-                                        onSave={() => console.log('Save job:', job.id)}
-                                    />
-                                </button>
-                            ))}
-                        </div>
-
-                        {filteredJobs.length === 0 && (
-                            <div className="text-center py-12">
-                                <div className="text-gray-400 mb-4">
-                                    <Search className="h-12 w-12 mx-auto" />
-                                </div>
-                                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                    No jobs found
-                                </h3>
-                                <p className="text-gray-600">
-                                    Try adjusting your search criteria or filters
-                                </p>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Job Details Modal */}
-                    {showJobDetails && selectedJob && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                                <div className="p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h2 className="text-2xl font-bold text-gray-900">
-                                            Job Details
-                                        </h2>
-                                        <Button
-                                            variant="outline"
-                                            onClick={handleCloseJobDetails}
-                                            className="text-gray-500 hover:text-gray-700"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                    
-                                    <JobDetails 
-                                        job={selectedJob}
-                                        onClose={handleCloseJobDetails}
-                                        onApply={(jobId, applicationData) => {
-                                            handleApplyToJob(jobId);
-                                            handleCloseJobDetails();
-                                        }}
-                                        onSave={() => console.log('Save job:', selectedJob.id)}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Job Posting Form Modal */}
-                    {showJobPostingForm && (
-                        <JobPostingForm
-                            onClose={() => setShowJobPostingForm(false)}
-                            onJobPosted={handleJobPosted}
-                        />
-                    )}
-                </div>
-            );
->>>>>>> 455e087f68c32471ff236bdee3f0c1da9d933fb6
 };
 
 export default JobListingsPage;
+function newFunction(setJobs: React.Dispatch<React.SetStateAction<Job[]>>, apiJobs: ApiJob[]) {
+    setJobs(apiJobs.map((apiJob): {
+        id: string; title: string; company: string; location: string; salary: string; type: string; status: "active" | "closed" | "draft"; applications: number; postedDate: string; description: string; requirements: any[]; benefits: string[]; deadline: string; // 30 days from now
+        employerId: string; duration: string; remote_work: true; experience_level: "Mid-level"; skills: any[];
+    } => {
+        // Use actual salary from API, only fallback if truly empty
+        let salary = apiJob.salary;
+        if (!salary || salary.trim() === '') {
+            // Only provide fallback if salary is actually empty
+            if (apiJob.title.toLowerCase().includes('senior') || apiJob.title.toLowerCase().includes('lead')) {
+                salary = '$120,000 - $150,000';
+            } else if (apiJob.title.toLowerCase().includes('junior') || apiJob.title.toLowerCase().includes('entry')) {
+                salary = '$60,000 - $80,000';
+            } else if (apiJob.title.toLowerCase().includes('developer') || apiJob.title.toLowerCase().includes('engineer')) {
+                salary = '$90,000 - $120,000';
+            } else {
+                salary = '$80,000 - $100,000';
+            }
+        }
+
+        // Get skills from the API response or extract from description as fallback
+        const skills = [];
+
+        // Use skills from API if available
+        if (apiJob.skills && apiJob.skills.length > 0) {
+            apiJob.skills.forEach(skill => {
+                skills.push(skill.name);
+            });
+        } else {
+            // Fallback: Extract skills from job description
+            const popularSkills = ['React', 'JavaScript', 'Python', 'Node.js', 'TypeScript', 'AWS', 'Docker', 'Kubernetes', 'Machine Learning', 'UI/UX Design'];
+
+            // Check if any popular skills are mentioned in the job description
+            popularSkills.forEach(skill => {
+                if (apiJob.description && apiJob.description.toLowerCase().includes(skill.toLowerCase())) {
+                    skills.push(skill);
+                }
+            });
+        }
+
+        return {
+            id: apiJob.id.toString(),
+            title: apiJob.title,
+            company: apiJob.company || 'Unknown Company',
+            location: apiJob.location || 'Remote',
+            salary: salary,
+            type: apiJob.type || 'FULL_TIME',
+            status: (apiJob.status as 'active' | 'closed' | 'draft') || 'active',
+            applications: apiJob.applications || 0,
+            postedDate: apiJob.posted_date || apiJob.created_at,
+            description: apiJob.description,
+            requirements: skills.length > 0 ? skills : ['Skills matching your profile'],
+            benefits: ['Competitive benefits'],
+            deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+            employerId: '1',
+            duration: 'Permanent',
+            remote_work: true,
+            experience_level: 'Mid-level',
+            skills: skills
+        };
+    }));
+}
+

@@ -53,9 +53,11 @@ const getInitialFormData = (job?: Job): JobFormData => ({
 	reasons_for_match: job?.reasons_for_match,
 	featured: job?.featured || false,
 	skill_ids: [],
+	skills: undefined,
+	type: undefined
 });
 
-const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, job, onSave, isEdit, isView }) => {
+function JobPostingForm({ onClose, onJobPosted, job, onSave, isEdit, isView }) {
 	const initialFormData = useMemo(() => getInitialFormData(job), [job]);
 	const [formData, setFormData] = useState<JobFormData>(initialFormData);
 	const [skills, setSkills] = useState<Skill[]>([]);
@@ -65,7 +67,7 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, j
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isLoadingSkills, setIsLoadingSkills] = useState(false);
 	const { toast } = useToast();
-	
+
 	useEffect(() => {
 		const fetchSkills = async () => {
 			setIsLoadingSkills(true);
@@ -78,7 +80,7 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, j
 				setIsLoadingSkills(false);
 			}
 		};
-		
+
 		fetchSkills();
 	}, []);
 
@@ -88,7 +90,7 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, j
 			[field]: value
 		}));
 	};
-	
+
 	const handleSkillSelect = async (skillId: number) => {
 		const skill = skills.find(s => s.id === skillId);
 		if (skill && !selectedSkills.some(s => s.id === skillId)) {
@@ -97,16 +99,16 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, j
 			handleInputChange('skill_ids', updatedSelectedSkills.map(s => s.id));
 		}
 	};
-	
+
 	const handleRemoveSkill = (skillId: number) => {
 		const updatedSelectedSkills = selectedSkills.filter(s => s.id !== skillId);
 		setSelectedSkills(updatedSelectedSkills);
 		handleInputChange('skill_ids', updatedSelectedSkills.map(s => s.id));
 	};
-	
+
 	const handleAddNewSkill = async () => {
 		if (!newSkill.trim()) return;
-		
+
 		try {
 			const createdSkill = await createSkill(newSkill.trim());
 			setSkills(prev => [...prev, createdSkill]);
@@ -153,12 +155,12 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, j
 				// Creating new job
 				result = await createJob(payload);
 			}
-			
+
 			toast({
 				title: "Job Posted Successfully!",
 				description: `"${formData.title}" is now live and visible to job seekers.`,
 			});
-			
+
 			if (onJobPosted) onJobPosted(result);
 			if (onSave) onSave(result);
 			onClose();
@@ -208,8 +210,7 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, j
 											value={formData.title}
 											onChange={(e) => handleInputChange('title', e.target.value)}
 											placeholder="e.g., Senior React Developer"
-											required
-										/>
+											required />
 									</div>
 									<div>
 										<Label htmlFor="company">Company Name *</Label>
@@ -218,8 +219,7 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, j
 											value={formData.company}
 											onChange={(e) => handleInputChange('company', e.target.value)}
 											placeholder="e.g., TechCorp Inc."
-											required
-										/>
+											required />
 									</div>
 								</div>
 
@@ -231,8 +231,7 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, j
 											value={formData.location}
 											onChange={(e) => handleInputChange('location', e.target.value)}
 											placeholder="e.g., San Francisco, CA"
-											required
-										/>
+											required />
 									</div>
 									<div>
 										<Label htmlFor="salary">Salary</Label>
@@ -240,8 +239,7 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, j
 											id="salary"
 											value={formData.salary}
 											onChange={(e) => handleInputChange('salary', e.target.value)}
-											placeholder="e.g., $80,000 - $120,000"
-										/>
+											placeholder="e.g., $80,000 - $120,000" />
 									</div>
 								</div>
 
@@ -286,8 +284,7 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, j
 											onChange={(e) => handleInputChange('description', e.target.value)}
 											placeholder="Describe the role, responsibilities, and what you're looking for..."
 											rows={6}
-											required
-										/>
+											required />
 									</CardContent>
 								</Card>
 
@@ -305,10 +302,9 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, j
 													value={newSkill}
 													onChange={(e) => setNewSkill(e.target.value)}
 													placeholder="Add a new skill..."
-													className="flex-1"
-												/>
-												<Button 
-													type="button" 
+													className="flex-1" />
+												<Button
+													type="button"
 													onClick={handleAddNewSkill}
 													disabled={!newSkill.trim()}
 													size="sm"
@@ -342,16 +338,15 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, j
 															.filter(skill => !selectedSkills.some(s => s.id === skill.id))
 															.slice(0, 10)
 															.map(skill => (
-																<Badge 
-																	key={skill.id} 
-																	variant="outline" 
+																<Badge
+																	key={skill.id}
+																	variant="outline"
 																	className="cursor-pointer hover:bg-secondary"
 																	onClick={() => handleSkillSelect(skill.id)}
 																>
 																	{skill.name}
 																</Badge>
-															))
-														}
+															))}
 													</div>
 												</div>
 											)}
@@ -386,6 +381,6 @@ const JobPostingForm: React.FC<JobPostingFormProps> = ({ onClose, onJobPosted, j
 			</div>
 		</div>
 	);
-};
+}
 
 export default JobPostingForm;
