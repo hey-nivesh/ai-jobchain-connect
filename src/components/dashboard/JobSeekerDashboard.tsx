@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useWebSocket, Job as SocketJob } from '../../hooks/useWebSocket';
+import { useWebSocket } from '../../hooks/useWebSocket';
 import { useAuth } from '../../hooks/useAuth';
 import { Bell, Zap, X, Briefcase, User, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ interface UiJob {
 }
 
 const mapApiJobToUi = (j: ApiJob): UiJob => ({
-	id: j.id,
+	id: typeof j.id === 'string' ? parseInt(j.id, 10) : j.id,
 	title: j.title,
 	company: j.company || 'Unknown',
 	location: j.location || 'Remote',
@@ -64,12 +64,12 @@ const JobSeekerDashboard: React.FC = () => {
 				const existingIds = new Set(prevJobs.map(job => job.id));
 				const uniqueNewJobs = newJobs
 					.map(j => mapApiJobToUi({
-						id: j.id,
+						id: typeof j.id === 'string' ? parseInt(j.id, 10) : j.id,
 						title: j.title,
 						description: j.description,
 						location: j.location,
 						company: j.company,
-						created_at: j.posted_date,
+						created_at: j.created_at,
 						employer_name: '',
 					}))
 					.filter(job => !existingIds.has(job.id));
@@ -86,28 +86,35 @@ const JobSeekerDashboard: React.FC = () => {
 		console.log(`Navigating to job ${jobId}`);
 	};
 
+	const connectionClassMap: Record<string, string> = {
+		Connected: 'bg-green-100 text-green-800',
+		Connecting: 'bg-yellow-100 text-yellow-800',
+		Disconnected: 'bg-red-100 text-red-800',
+	};
+
+	const connectionLabelMap: Record<string, string> = {
+		Connected: '🟢 Live Updates',
+		Connecting: '🟡 Connecting...',
+		Disconnected: '🔴 Disconnected',
+	};
+
+	const connectionClasses = connectionClassMap[connectionStatus] || 'bg-red-100 text-red-800';
+	const connectionLabel = connectionLabelMap[connectionStatus] || '🔴 Disconnected';
+
 	const becomeEmployer = async (): Promise<void> => {
 		try {
 			await apiClient.post('/set-role', { role: 'EMPLOYER' });
 			setUserRole('employer');
 			navigate('/dashboard');
 		} catch (e) {
-			console.error('Failed to switch to employer role');
+			console.error('Failed to switch to employer role', e);
 		}
 	};
 
 	return (
 		<div className="min-h-screen bg-gray-50">
-			<div className={`fixed top-4 right-4 px-3 py-1 rounded-full text-xs font-medium z-50 ${
-				connectionStatus === 'Connected' 
-					? 'bg-green-100 text-green-800' 
-					: connectionStatus === 'Connecting'
-					? 'bg-yellow-100 text-yellow-800'
-					: 'bg-red-100 text-red-800'
-			}`}> 
-				{connectionStatus === 'Connected' && '🟢 Live Updates'}
-				{connectionStatus === 'Connecting' && '🟡 Connecting...'}
-				{connectionStatus === 'Disconnected' && '🔴 Disconnected'}
+			<div className={`fixed top-4 right-4 px-3 py-1 rounded-full text-xs font-medium z-50 ${connectionClasses}`}>
+				{connectionLabel}
 			</div>
 
 			{newJobs.length > 0 && (
@@ -218,7 +225,7 @@ const JobSeekerDashboard: React.FC = () => {
 					<TabsContent value="recommendations" className="space-y-4">
 						<div className="space-y-4">
 							{jobs.map((job, index) => (
-								<div 
+								<button 
 									key={job.id}
 									className={`bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow cursor-pointer ${
 										index < newJobs.length ? 'ring-2 ring-blue-500 bg-blue-50' : ''
@@ -261,10 +268,24 @@ const JobSeekerDashboard: React.FC = () => {
 											Save Job
 										</Button>
 									</div>
-								</div>
+								</button>
 							))}
 						</div>
 					</TabsContent>
+
+					{jobs.length === 0 && (
+						<div className="text-center py-12">
+							<div className="text-gray-400 mb-4">
+								<Bell className="h-12 w-12 mx-auto" />
+							</div>
+							<h3 className="text-lg font-medium text-gray-900 mb-2">
+								No jobs yet
+							</h3>
+							<p className="text-gray-600">
+								We'll notify you when new jobs match your profile
+							</p>
+						</div>
+					)}
 
 					<TabsContent value="recent" className="space-y-4">
 						<div className="text-center py-12">
@@ -294,20 +315,6 @@ const JobSeekerDashboard: React.FC = () => {
 						</div>
 					</TabsContent>
 				</Tabs>
-
-				{jobs.length === 0 && (
-					<div className="text-center py-12">
-						<div className="text-gray-400 mb-4">
-							<Bell className="h-12 w-12 mx-auto" />
-						</div>
-						<h3 className="text-lg font-medium text-gray-900 mb-2">
-							No jobs yet
-						</h3>
-						<p className="text-gray-600">
-							We'll notify you when new jobs match your profile
-						</p>
-					</div>
-				)}
 			</div>
 		</div>
 	);

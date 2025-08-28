@@ -18,7 +18,7 @@ apiClient.interceptors.request.use(
 		}
 		return config;
 	},
-	(error) => Promise.reject(error)
+	(error) => Promise.reject(new Error(error))
 );
 
 // Add response interceptor for error handling
@@ -29,7 +29,7 @@ apiClient.interceptors.response.use(
 			localStorage.removeItem('authToken');
 			window.location.href = '/login';
 		}
-		return Promise.reject(error);
+		return Promise.reject(new Error(error));
 	}
 );
 

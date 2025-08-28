@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getJobs, ApiJob } from '@/services/jobService';
+import { getJobs } from '@/services/jobService';
 
 export interface Job {
   id: string;
